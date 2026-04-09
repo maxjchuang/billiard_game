@@ -1,0 +1,20 @@
+{
+  "appid": "touristappid",
+  "compileType": "game",
+  "projectname": "billiard-game",
+  "simulatorPluginLibVersion": {},
+  "setting": {
+    "es6": true,
+    "minified": false,
+    "coverView": true,
+    "postcss": false,
+    "enhance": true,
+    "packNpmManually": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "condition": {}
+}
