@@ -25,6 +25,22 @@ import { ResultScene } from './scenes/ResultScene'
 
 type AppState = 'boot' | 'menu' | 'aiming' | 'powering' | 'shooting' | 'ballsMoving' | 'roundSettlement' | 'result'
 
+export interface DebugAppState {
+  state: AppState
+  currentPlayer: 1 | 2 | null
+  playerGroups: { p1: string; p2: string } | null
+  cueBallInHand: boolean | null
+  foul: boolean | null
+  foulReasons: string[]
+  keepTurn: boolean | null
+  gameOver: boolean | null
+  winner: 1 | 2 | null
+  lastFirstHitBallId: number | null
+  lastPocketedBallIds: number[]
+  lastAllStopped: boolean | null
+  balls: Array<{ id: number; type: string; x: number; y: number; vx: number; vy: number; pocketed: boolean }>
+}
+
 export class GameApp {
   private readonly wxAdapter: WxAdapter
   private readonly sceneManager: SceneManager
@@ -106,6 +122,128 @@ export class GameApp {
     this.sceneManager.setScene(new MatchScene(this.logger), 'match')
     this.stateMachine.transition('aiming', 'match-started')
     this.logger.info('GameApp', 'start-match', { ballCount: balls.length })
+  }
+
+  /**
+   * Web Debug/自动化用：显式开始对局
+   */
+  debugStartMatch(): void {
+    this.logger.info('GameApp', 'debug-start-match')
+    this.startMatch()
+  }
+
+  /**
+   * Web Debug/自动化用：直接触发一次出杆
+   */
+  debugShoot(angle: number, power: number): void {
+    if (!this.session || !this.shotResolver) {
+      this.logger.warn('GameApp', 'debug-shoot-no-session')
+      return
+    }
+
+    const cueBall = this.session.getBallById(0)
+    if (!cueBall) {
+      this.logger.warn('GameApp', 'debug-shoot-no-cue')
+      return
+    }
+
+    this.aimController.aimAngle = angle
+    this.powerController.powerPercent = power
+    this.shotResolver.shoot(cueBall, angle, power)
+    this.stateMachine.transition('ballsMoving', 'debug-shoot')
+    this.logger.info('GameApp', 'debug-shoot', { angle, power })
+  }
+
+  /**
+   * Web Debug/自动化用：推进游戏若干步（用于等待物理/结算）
+   */
+  debugAdvance(steps: number, dtSeconds: number): void {
+    const safeSteps = Math.max(0, Math.min(10000, Math.floor(steps)))
+    const dt = Math.max(0, Math.min(0.1, dtSeconds))
+    for (let i = 0; i < safeSteps; i += 1) {
+      this.step(dt)
+    }
+    this.logger.info('GameApp', 'debug-advance', { steps: safeSteps, dt })
+  }
+
+  /**
+   * Web Debug/自动化用：直接摆放球（用于构造可复现实验场景）
+   */
+  debugPlaceBall(ballId: number, x: number, y: number): void {
+    if (!this.session) {
+      this.logger.warn('GameApp', 'debug-place-ball-no-session')
+      return
+    }
+    const ball = this.session.getBallById(ballId)
+    if (!ball) {
+      this.logger.warn('GameApp', 'debug-place-ball-not-found', { ballId })
+      return
+    }
+    ball.position = new Vector2(x, y)
+    ball.velocity = Vector2.zero()
+    ball.active = true
+    ball.pocketed = false
+    this.logger.info('GameApp', 'debug-place-ball', { ballId, x, y })
+  }
+
+  /**
+   * Web Debug/自动化用：设置当前玩家分组（仅用于自动化构造合法/非法黑八等场景）
+   */
+  debugAssignCurrentPlayerGroup(group: 'solid' | 'stripe'): void {
+    if (!this.session) {
+      this.logger.warn('GameApp', 'debug-assign-group-no-session')
+      return
+    }
+    this.session.assignCurrentPlayerGroup(group)
+    this.logger.info('GameApp', 'debug-assign-group', { group })
+  }
+
+  /**
+   * Web Debug/自动化用：将某一组球标记为全部落袋（仅用于自动化构造场景）
+   */
+  debugMarkAllGroupPocketed(group: 'solid' | 'stripe'): void {
+    if (!this.session) {
+      this.logger.warn('GameApp', 'debug-mark-group-no-session')
+      return
+    }
+    const ids = this.session.tableState.balls.filter((b) => b.type === group).map((b) => b.id)
+    this.session.markPocketedBallIds(ids)
+    this.logger.info('GameApp', 'debug-mark-group-pocketed', { group, ids })
+  }
+
+  debugGetState(): DebugAppState {
+    const session = this.session
+    const world = this.world
+
+    const lastFrame = world?.getLastFrame() ?? { firstHitBallId: null, pocketedBallIds: [], allStopped: true }
+    const balls = session?.tableState.balls ?? []
+    const foulReasons = session?.lastRoundResult?.foulReasons ?? []
+
+    return {
+      state: this.stateMachine.current,
+      currentPlayer: session?.turnState.currentPlayer ?? null,
+      playerGroups: session
+        ? { p1: session.playerGroups[1], p2: session.playerGroups[2] }
+        : null,
+      cueBallInHand: session?.turnState.cueBallInHand ?? null,
+      foul: session?.turnState.foul ?? null,
+      foulReasons,
+      keepTurn: session?.turnState.keepTurn ?? null,
+      gameOver: session?.gameOver ?? null,
+      winner: session?.winner ?? null,
+      lastFirstHitBallId: lastFrame.firstHitBallId,
+      lastPocketedBallIds: lastFrame.pocketedBallIds,
+      lastAllStopped: world ? lastFrame.allStopped : null,
+      balls: balls.map((b) => ({
+        id: b.id,
+        type: b.type,
+        x: b.position.x,
+        y: b.position.y,
+        vx: b.velocity.x,
+        vy: b.velocity.y,
+        pocketed: b.pocketed
+      }))
+    }
   }
 
   step(deltaTime: number): void {

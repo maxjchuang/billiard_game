@@ -27,6 +27,7 @@ interface PhysicsWorldOptions extends TableDimensions {
 export class PhysicsWorld {
   private readonly pockets: Pocket[]
   private readonly config: PhysicsConfigShape
+  private lastFrame: PhysicsFrameResult = { firstHitBallId: null, pocketedBallIds: [], allStopped: true }
 
   constructor(private readonly options: PhysicsWorldOptions) {
     this.config = options.config ?? PhysicsConfig
@@ -86,6 +87,12 @@ export class PhysicsWorld {
 
     const allStopped = this.balls.every((ball) => ball.pocketed || ball.velocity.length() <= this.config.minVelocity)
 
+    this.lastFrame = {
+      firstHitBallId,
+      pocketedBallIds,
+      allStopped
+    }
+
     this.options.logger.info('PhysicsWorld', 'step', {
       dt,
       firstHitBallId,
@@ -93,11 +100,11 @@ export class PhysicsWorld {
       allStopped
     })
 
-    return {
-      firstHitBallId,
-      pocketedBallIds,
-      allStopped
-    }
+    return this.lastFrame
+  }
+
+  getLastFrame(): PhysicsFrameResult {
+    return this.lastFrame
   }
 
   private handleRailCollision(ball: BallBody): void {

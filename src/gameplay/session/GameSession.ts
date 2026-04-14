@@ -45,6 +45,7 @@ export class GameSession {
   public readonly playerGroups: Record<PlayerId, AssignedGroup>
   public winner: PlayerId | null = null
   public gameOver = false
+  public lastRoundResult: RoundResult | null = null
 
   private constructor(private readonly logger: Logger, balls: BallBody[]) {
     this.tableState = {
@@ -137,6 +138,7 @@ export class GameSession {
     this.tableState.shotCount += 1
     this.winner = result.winner
     this.gameOver = result.gameOver
+    this.lastRoundResult = result
 
     this.logger.info('GameSession', 'apply-round-result', {
       nextPlayer: result.nextPlayer,
