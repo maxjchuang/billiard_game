@@ -21,6 +21,12 @@ try {
       placeBall: (ballId: number, x: number, y: number) => app.debugPlaceBall(ballId, x, y),
       assignGroup: (group: 'solid' | 'stripe') => app.debugAssignCurrentPlayerGroup(group),
       markAllGroupPocketed: (group: 'solid' | 'stripe') => app.debugMarkAllGroupPocketed(group),
+      resolveShot: (shotContext: any) => app.debugResolveShot(shotContext),
+      restartMatch: () => app.debugRestartMatch(),
+      backMenu: () => app.debugBackMenu(),
+      pause: () => app.debugPause(),
+      resume: () => app.debugResume(),
+      setRenderEnabled: (enabled: boolean) => app.debugSetRenderEnabled(enabled),
       getState: () => app.debugGetState()
     }
 

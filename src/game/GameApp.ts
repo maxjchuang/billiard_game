@@ -6,7 +6,7 @@ import { SceneManager } from '../core/scene/SceneManager'
 import { RoundResolver } from '../gameplay/flow/RoundResolver'
 import { ShotResolver } from '../gameplay/flow/ShotResolver'
 import { RuleEngine } from '../gameplay/rules/RuleEngine'
-import { GameSession } from '../gameplay/session/GameSession'
+import { GameSession, type ShotContext } from '../gameplay/session/GameSession'
 import { InputManager } from '../input/InputManager'
 import { AimController } from '../input/gesture/AimController'
 import { PowerController } from '../input/gesture/PowerController'
@@ -38,6 +38,10 @@ export interface DebugAppState {
   lastFirstHitBallId: number | null
   lastPocketedBallIds: number[]
   lastAllStopped: boolean | null
+  lastShotFirstHitBallId: number | null
+  lastShotPocketedBallIds: number[]
+  lastShotCueBallPocketed: boolean
+  lastShotBlackBallPocketed: boolean
   balls: Array<{ id: number; type: string; x: number; y: number; vx: number; vy: number; pocketed: boolean }>
 }
 
@@ -57,6 +61,12 @@ export class GameApp {
   private world: PhysicsWorld | null = null
   private shotResolver: ShotResolver | null = null
   private roundResolver: RoundResolver | null = null
+
+  private currentShotContext: ShotContext | null = null
+  private lastResolvedShotContext: ShotContext | null = null
+
+  private renderEnabled = true
+  private paused = false
 
   constructor(private readonly logger: Logger) {
     this.wxAdapter = new WxAdapter((globalThis as unknown as { wx?: unknown }).wx as any, logger)
@@ -119,9 +129,47 @@ export class GameApp {
     })
     this.shotResolver = new ShotResolver(this.logger, PhysicsConfig)
     this.roundResolver = new RoundResolver(new RuleEngine(this.logger), this.logger)
+    this.resetShotContext()
     this.sceneManager.setScene(new MatchScene(this.logger), 'match')
     this.stateMachine.transition('aiming', 'match-started')
     this.logger.info('GameApp', 'start-match', { ballCount: balls.length })
+  }
+
+  private resetShotContext(): void {
+    this.currentShotContext = {
+      firstHitBallId: null,
+      pocketedBallIds: [],
+      cueBallPocketed: false,
+      blackBallPocketed: false,
+      railHitAfterContact: true,
+      foulReasons: []
+    }
+  }
+
+  private accumulateShotFrame(frame: { firstHitBallId: number | null; pocketedBallIds: number[] }): void {
+    if (!this.currentShotContext) {
+      this.resetShotContext()
+    }
+    if (!this.currentShotContext) {
+      return
+    }
+
+    if (this.currentShotContext.firstHitBallId === null && frame.firstHitBallId !== null) {
+      this.currentShotContext.firstHitBallId = frame.firstHitBallId
+    }
+
+    for (const ballId of frame.pocketedBallIds) {
+      if (!this.currentShotContext.pocketedBallIds.includes(ballId)) {
+        this.currentShotContext.pocketedBallIds.push(ballId)
+      }
+    }
+
+    if (this.currentShotContext.pocketedBallIds.includes(0)) {
+      this.currentShotContext.cueBallPocketed = true
+    }
+    if (this.currentShotContext.pocketedBallIds.includes(8)) {
+      this.currentShotContext.blackBallPocketed = true
+    }
   }
 
   /**
@@ -149,9 +197,62 @@ export class GameApp {
 
     this.aimController.aimAngle = angle
     this.powerController.powerPercent = power
+    this.resetShotContext()
     this.shotResolver.shoot(cueBall, angle, power)
     this.stateMachine.transition('ballsMoving', 'debug-shoot')
     this.logger.info('GameApp', 'debug-shoot', { angle, power })
+  }
+
+  /**
+   * Web Debug/自动化用：直接用 shotContext 执行一次规则结算（绕过物理），用于规则类用例的确定性验证。
+   */
+  debugResolveShot(shotContext: ShotContext): void {
+    if (!this.session || !this.roundResolver) {
+      this.logger.warn('GameApp', 'debug-resolve-shot-no-session')
+      return
+    }
+
+    this.lastResolvedShotContext = shotContext
+    this.roundResolver.resolve(this.session, shotContext)
+    this.stateMachine.transition(this.session.gameOver ? 'result' : 'aiming', 'debug-resolve-shot')
+    if (this.session.gameOver) {
+      this.sceneManager.setScene(new ResultScene(this.logger), 'result')
+    }
+
+    this.logger.info('GameApp', 'debug-resolve-shot', {
+      gameOver: this.session.gameOver,
+      winner: this.session.winner
+    })
+  }
+
+  /** Web Debug/自动化用：重开对局 */
+  debugRestartMatch(): void {
+    this.logger.info('GameApp', 'debug-restart-match')
+    this.startMatch()
+  }
+
+  /** Web Debug/自动化用：返回标题页 */
+  debugBackMenu(): void {
+    this.logger.info('GameApp', 'debug-back-menu')
+    this.sceneManager.setScene(new MenuScene(this.logger), 'menu')
+    this.stateMachine.transition('menu', 'debug-back-menu')
+  }
+
+  /** Web Debug/自动化用：暂停/恢复（用于模拟切后台） */
+  debugPause(): void {
+    this.paused = true
+    this.logger.info('GameApp', 'debug-pause')
+  }
+
+  debugResume(): void {
+    this.paused = false
+    this.logger.info('GameApp', 'debug-resume')
+  }
+
+  /** Web Debug/自动化用：启用/禁用渲染（用于长跑压测加速） */
+  debugSetRenderEnabled(enabled: boolean): void {
+    this.renderEnabled = enabled
+    this.logger.info('GameApp', 'debug-render-enabled', { enabled })
   }
 
   /**
@@ -218,6 +319,7 @@ export class GameApp {
     const lastFrame = world?.getLastFrame() ?? { firstHitBallId: null, pocketedBallIds: [], allStopped: true }
     const balls = session?.tableState.balls ?? []
     const foulReasons = session?.lastRoundResult?.foulReasons ?? []
+    const lastShot = this.lastResolvedShotContext ?? this.currentShotContext
 
     return {
       state: this.stateMachine.current,
@@ -234,6 +336,10 @@ export class GameApp {
       lastFirstHitBallId: lastFrame.firstHitBallId,
       lastPocketedBallIds: lastFrame.pocketedBallIds,
       lastAllStopped: world ? lastFrame.allStopped : null,
+      lastShotFirstHitBallId: lastShot?.firstHitBallId ?? null,
+      lastShotPocketedBallIds: lastShot?.pocketedBallIds ?? [],
+      lastShotCueBallPocketed: Boolean(lastShot?.cueBallPocketed),
+      lastShotBlackBallPocketed: Boolean(lastShot?.blackBallPocketed),
       balls: balls.map((b) => ({
         id: b.id,
         type: b.type,
@@ -251,27 +357,34 @@ export class GameApp {
   }
 
   private update(dt: number): void {
+    if (this.paused) {
+      return
+    }
     this.sceneManager.update(dt)
     this.consumeInput()
 
     if (this.stateMachine.current === 'ballsMoving' && this.world && this.session && this.roundResolver) {
       const frame = this.world.step(dt)
+      this.accumulateShotFrame(frame)
       if (frame.allStopped) {
-        const cueBallPocketed = frame.pocketedBallIds.includes(0)
-        const blackBallPocketed = frame.pocketedBallIds.includes(8)
-        this.roundResolver.resolve(this.session, {
+        const shotContext = this.currentShotContext ?? {
           firstHitBallId: frame.firstHitBallId,
           pocketedBallIds: frame.pocketedBallIds,
-          cueBallPocketed,
-          blackBallPocketed,
+          cueBallPocketed: frame.pocketedBallIds.includes(0),
+          blackBallPocketed: frame.pocketedBallIds.includes(8),
           railHitAfterContact: true,
           foulReasons: []
-        })
+        }
+
+        this.lastResolvedShotContext = shotContext
+        this.roundResolver.resolve(this.session, shotContext)
 
         this.stateMachine.transition(this.session.gameOver ? 'result' : 'aiming', 'balls-stopped')
         if (this.session.gameOver) {
           this.sceneManager.setScene(new ResultScene(this.logger), 'result')
         }
+
+        this.resetShotContext()
       }
     }
 
@@ -293,6 +406,7 @@ export class GameApp {
         }
         this.aimController.aimAngle = intent.angle
         this.powerController.powerPercent = intent.power
+        this.resetShotContext()
         this.shotResolver.shoot(cueBall, intent.angle, intent.power)
         this.stateMachine.transition('ballsMoving', 'player-shoot')
         this.deviceService.vibrateShort()
@@ -310,7 +424,7 @@ export class GameApp {
   }
 
   private render(): void {
-    if (!this.renderer) {
+    if (!this.renderer || !this.renderEnabled) {
       return
     }
 

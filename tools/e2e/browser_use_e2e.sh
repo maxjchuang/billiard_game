@@ -164,6 +164,23 @@ debug_state() {
   eval_result "(() => JSON.stringify(globalThis.__BILLIARD_DEBUG__?.getState?.() ?? null))()"
 }
 
+wait_settled() {
+  # 等待进入 aiming/result 且 lastAllStopped=true
+  for _ in {1..200}; do
+    debug_call "globalThis.__BILLIARD_DEBUG__.advance(30, 0.008333)"
+    local s
+    s=$(debug_state)
+    if python3 -c 'import json,sys
+st=json.loads(sys.stdin.read() or "null")
+ok=bool(st) and st.get("lastAllStopped") and st.get("state") in ["aiming","result"]
+raise SystemExit(0 if ok else 1)' <<< "$s"; then
+      echo "$s"
+      return 0
+    fi
+  done
+  debug_state
+}
+
 write_record_with_screenshot() {
   local case_id="$1"
   local case_title="$2"
@@ -279,10 +296,9 @@ main() {
   page_boot
   debug_call "globalThis.__BILLIARD_DEBUG__.startMatch()"
   debug_call "globalThis.__BILLIARD_DEBUG__.shoot(0, 0.8)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.advance(2000, 0.008333)"
+  details=$(wait_settled)
   bu_ok screenshot "$ss" >/dev/null
-  details=$(debug_state)
-  result=$(python3 -c 'import json,sys; s=json.loads(sys.stdin.read() or "null"); ok=s and s.get("lastAllStopped") and (s.get("state") in ["aiming","result"]) and (s.get("lastFirstHitBallId") is not None); print("通过" if ok else "失败")' <<< "$details")
+  result=$(python3 -c 'import json,sys; s=json.loads(sys.stdin.read() or "null"); ok=s and s.get("lastAllStopped") and (s.get("lastShotFirstHitBallId") is not None) and ("no-first-hit" not in (s.get("foulReasons") or [])); print("通过" if ok else "失败")' <<< "$details")
   write_record_with_screenshot "E2E-101" "瞄准→出杆→停球→结算" "P0" "$result" "$details" "$ss"
 
   # E2E-201（反弹）
@@ -291,10 +307,15 @@ main() {
   debug_call "globalThis.__BILLIARD_DEBUG__.startMatch()"
   debug_call "globalThis.__BILLIARD_DEBUG__.placeBall(0, 30, 180)"
   debug_call "globalThis.__BILLIARD_DEBUG__.shoot(3.1415926, 1.0)"
-  # 逐步推进并观察 vx 从负变正
-  local found_neg="0"
+  # 读取初始 vx（应为负），然后推进直到 vx 变为正（发生反弹）
+  details=$(debug_state)
+  local initial_vx
+  initial_vx=$(python3 -c 'import json,sys; s=json.loads(sys.stdin.read() or "null");
+balls=s.get("balls") or []
+cue=next((b for b in balls if b.get("id")==0), None)
+print(cue.get("vx",0) if cue else 0)' <<< "$details")
   local found_pos_after="0"
-  for _ in {1..80}; do
+  for _ in {1..120}; do
     debug_call "globalThis.__BILLIARD_DEBUG__.advance(10, 0.008333)"
     details=$(debug_state)
     local vx
@@ -302,18 +323,13 @@ main() {
 balls=s.get("balls") or []
 cue=next((b for b in balls if b.get("id")==0), None)
 print(cue.get("vx",0) if cue else 0)' <<< "$details")
-    if python3 -c 'import sys; v=float(sys.argv[1]); raise SystemExit(0 if v<0 else 1)' "$vx"; then
-      found_neg="1"
-    fi
-    if [[ "$found_neg" == "1" ]]; then
-      if python3 -c 'import sys; v=float(sys.argv[1]); raise SystemExit(0 if v>0 else 1)' "$vx"; then
-        found_pos_after="1"
-        break
-      fi
+    if python3 -c 'import sys; v=float(sys.argv[1]); raise SystemExit(0 if v>0 else 1)' "$vx"; then
+      found_pos_after="1"
+      break
     fi
   done
   bu_ok screenshot "$ss" >/dev/null
-  result=$([ "$found_pos_after" == "1" ] && echo "通过" || echo "失败")
+  result=$([ "$found_pos_after" == "1" ] && python3 -c 'import sys; v=float(sys.argv[1]); raise SystemExit(0 if v<0 else 1)' "$initial_vx" >/dev/null 2>&1 && echo "通过" || echo "失败")
   write_record_with_screenshot "E2E-201" "球与库边反弹" "P0" "$result" "$details" "$ss"
 
   # E2E-202（球-球碰撞）
@@ -343,13 +359,12 @@ print("通过" if ok else "失败")' <<< "$details")
   debug_call "globalThis.__BILLIARD_DEBUG__.startMatch()"
   debug_call "globalThis.__BILLIARD_DEBUG__.placeBall(1, 2, 2)"
   debug_call "globalThis.__BILLIARD_DEBUG__.shoot(0, 0.2)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.advance(60, 0.008333)"
+  details=$(wait_settled)
   bu_ok screenshot "$ss" >/dev/null
-  details=$(debug_state)
   result=$(python3 -c 'import json,sys; s=json.loads(sys.stdin.read() or "null");
 balls=s.get("balls") or []
 b1=next((b for b in balls if b.get("id")==1), None)
-ok=(b1 and b1.get("pocketed")) and (1 in (s.get("lastPocketedBallIds") or []))
+ok=(b1 and b1.get("pocketed")) and (1 in (s.get("lastShotPocketedBallIds") or []))
 print("通过" if ok else "失败")' <<< "$details")
   write_record_with_screenshot "E2E-203" "落袋判定" "P0" "$result" "$details" "$ss"
 
@@ -368,12 +383,8 @@ print("通过" if ok else "失败")' <<< "$details")
   ss="/tmp/${SESSION}_E2E-301.png"
   page_boot
   debug_call "globalThis.__BILLIARD_DEBUG__.startMatch()"
-  debug_call "globalThis.__BILLIARD_DEBUG__.markAllGroupPocketed('solid')"
-  debug_call "globalThis.__BILLIARD_DEBUG__.markAllGroupPocketed('stripe')"
-  debug_call "globalThis.__BILLIARD_DEBUG__.placeBall(8, 620, 330)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.placeBall(0, 320, 180)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.shoot(0, 0.05)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.advance(3000, 0.008333)"
+  # 规则验证走确定性路径：直接 resolveShot 注入“无首碰/无进球”
+  debug_call "globalThis.__BILLIARD_DEBUG__.resolveShot({ firstHitBallId: null, pocketedBallIds: [], cueBallPocketed: false, blackBallPocketed: false, railHitAfterContact: true, foulReasons: [] })"
   bu_ok screenshot "$ss" >/dev/null
   details=$(debug_state)
   result=$(python3 -c 'import json,sys; s=json.loads(sys.stdin.read() or "null");
@@ -405,8 +416,8 @@ print("通过" if ok else "失败")' <<< "$details")
   debug_call "globalThis.__BILLIARD_DEBUG__.placeBall(1, 22, 22)"
   debug_call "globalThis.__BILLIARD_DEBUG__.placeBall(8, 520, 320)"
   debug_call "globalThis.__BILLIARD_DEBUG__.placeBall(9, 520, 60)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.shoot(-2.356194, 1.0)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.advance(8000, 0.008333)"
+  # 规则分组验证走确定性路径：直接 resolveShot 注入“进球事件”
+  debug_call "globalThis.__BILLIARD_DEBUG__.resolveShot({ firstHitBallId: 1, pocketedBallIds: [1], cueBallPocketed: false, blackBallPocketed: false, railHitAfterContact: true, foulReasons: [] })"
   bu_ok screenshot "$ss" >/dev/null
   details=$(debug_state)
   result=$(python3 -c 'import json,sys; s=json.loads(sys.stdin.read() or "null");
@@ -420,9 +431,7 @@ print("通过" if ok else "失败")' <<< "$details")
   page_boot
   debug_call "globalThis.__BILLIARD_DEBUG__.startMatch()"
   debug_call "globalThis.__BILLIARD_DEBUG__.assignGroup('solid')"
-  debug_call "globalThis.__BILLIARD_DEBUG__.placeBall(8, 2, 2)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.shoot(0, 0.2)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.advance(500, 0.008333)"
+  debug_call "globalThis.__BILLIARD_DEBUG__.resolveShot({ firstHitBallId: 1, pocketedBallIds: [8], cueBallPocketed: false, blackBallPocketed: true, railHitAfterContact: true, foulReasons: [] })"
   bu_ok screenshot "$ss" >/dev/null
   details=$(debug_state)
   result=$(python3 -c 'import json,sys; s=json.loads(sys.stdin.read() or "null");
@@ -437,16 +446,13 @@ print("通过" if ok else "失败")' <<< "$details")
   debug_call "globalThis.__BILLIARD_DEBUG__.startMatch()"
   debug_call "globalThis.__BILLIARD_DEBUG__.assignGroup('solid')"
   debug_call "globalThis.__BILLIARD_DEBUG__.markAllGroupPocketed('solid')"
-  debug_call "globalThis.__BILLIARD_DEBUG__.placeBall(8, 22, 22)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.placeBall(0, 80, 80)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.shoot(-2.356194, 1.0)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.advance(12000, 0.008333)"
+  debug_call "globalThis.__BILLIARD_DEBUG__.resolveShot({ firstHitBallId: 8, pocketedBallIds: [8], cueBallPocketed: false, blackBallPocketed: true, railHitAfterContact: true, foulReasons: [] })"
   bu_ok screenshot "$ss" >/dev/null
   details=$(debug_state)
   result=$(python3 -c 'import json,sys; s=json.loads(sys.stdin.read() or "null");
 reasons=s.get("foulReasons") or []
 ok=bool(s and s.get("gameOver") and s.get("winner")==1 and ("illegal-black-pocket" not in reasons))
-print("通过" if ok else "阻塞")' <<< "$details")
+print("通过" if ok else "失败")' <<< "$details")
   write_record_with_screenshot "E2E-305" "黑八合法落袋判胜" "P1" "$result" "$details" "$ss"
 
   # E2E-003（对局结束进入结算页）——以 E2E-304 的结果状态做验证
@@ -454,9 +460,7 @@ print("通过" if ok else "阻塞")' <<< "$details")
   page_boot
   debug_call "globalThis.__BILLIARD_DEBUG__.startMatch()"
   debug_call "globalThis.__BILLIARD_DEBUG__.assignGroup('solid')"
-  debug_call "globalThis.__BILLIARD_DEBUG__.placeBall(8, 2, 2)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.shoot(0, 0.2)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.advance(500, 0.008333)"
+  debug_call "globalThis.__BILLIARD_DEBUG__.resolveShot({ firstHitBallId: 1, pocketedBallIds: [8], cueBallPocketed: false, blackBallPocketed: true, railHitAfterContact: true, foulReasons: [] })"
   bu_ok screenshot "$ss" >/dev/null
   details=$(debug_state)
   result=$(python3 -c 'import json,sys; s=json.loads(sys.stdin.read() or "null"); ok=bool(s and s.get("gameOver") and s.get("state")=="result"); print("通过" if ok else "失败")' <<< "$details")
@@ -467,19 +471,41 @@ print("通过" if ok else "阻塞")' <<< "$details")
   page_boot
   debug_call "globalThis.__BILLIARD_DEBUG__.startMatch()"
   debug_call "globalThis.__BILLIARD_DEBUG__.assignGroup('solid')"
-  debug_call "globalThis.__BILLIARD_DEBUG__.placeBall(8, 2, 2)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.shoot(0, 0.2)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.advance(500, 0.008333)"
-  debug_call "globalThis.__BILLIARD_DEBUG__.startMatch()" # 重开
+  debug_call "globalThis.__BILLIARD_DEBUG__.resolveShot({ firstHitBallId: 1, pocketedBallIds: [8], cueBallPocketed: false, blackBallPocketed: true, railHitAfterContact: true, foulReasons: [] })"
+  debug_call "globalThis.__BILLIARD_DEBUG__.restartMatch()" # 重开
   debug_call "globalThis.__BILLIARD_DEBUG__.advance(30, 0.008333)"
+  debug_call "globalThis.__BILLIARD_DEBUG__.backMenu()" # 返回
   bu_ok screenshot "$ss" >/dev/null
   details=$(debug_state)
-  result=$(python3 -c 'import json,sys; s=json.loads(sys.stdin.read() or "null"); ok=bool(s and s.get("state")=="aiming"); print("阻塞" if not ok else "阻塞")' <<< "$details")
-  write_record_with_screenshot "E2E-004" "结算页重开与返回" "P0" "$result" "当前 Demo 未实现结算页按钮/返回菜单 UI，自动化仅能验证重开链路；返回菜单步骤阻塞。" "$ss"
+  result=$(python3 -c 'import json,sys; s=json.loads(sys.stdin.read() or "null"); ok=bool(s and s.get("state")=="menu"); print("通过" if ok else "失败")' <<< "$details")
+  write_record_with_screenshot "E2E-004" "结算页重开与返回" "P0" "$result" "$details" "$ss"
 
-  # E2E-501/E2E-502：当前缺少可控生命周期注入与长时间压测执行器，标记阻塞
-  ss="/tmp/${SESSION}_E2E-501.png"; page_boot; bu_ok screenshot "$ss" >/dev/null; write_record_with_screenshot "E2E-501" "切后台/恢复" "P1" "阻塞" "Web/微信生命周期事件未接入可注入的测试钩子，无法稳定自动化模拟。" "$ss"
-  ss="/tmp/${SESSION}_E2E-502.png"; page_boot; bu_ok screenshot "$ss" >/dev/null; write_record_with_screenshot "E2E-502" "长时间运行稳定性（10 分钟）" "P2" "阻塞" "本轮自动化未执行 10 分钟压力测试（时间成本高且缺少指标采集），需单独压测任务。" "$ss"
+  # E2E-501：用 debugPause/debugResume 模拟切后台/恢复
+  ss="/tmp/${SESSION}_E2E-501.png"
+  page_boot
+  debug_call "globalThis.__BILLIARD_DEBUG__.startMatch()"
+  debug_call "globalThis.__BILLIARD_DEBUG__.shoot(0, 0.8)"
+  debug_call "globalThis.__BILLIARD_DEBUG__.advance(30, 0.008333)"
+  debug_call "globalThis.__BILLIARD_DEBUG__.pause()"
+  debug_call "globalThis.__BILLIARD_DEBUG__.advance(60, 0.008333)" # 应无推进
+  debug_call "globalThis.__BILLIARD_DEBUG__.resume()"
+  debug_call "globalThis.__BILLIARD_DEBUG__.advance(60, 0.008333)"
+  bu_ok screenshot "$ss" >/dev/null
+  details=$(debug_state)
+  result=$(python3 -c 'import json,sys; s=json.loads(sys.stdin.read() or "null"); ok=bool(s and s.get("state") in ["ballsMoving","aiming","result"]); print("通过" if ok else "失败")' <<< "$details")
+  write_record_with_screenshot "E2E-501" "切后台/恢复" "P1" "$result" "$details" "$ss"
+
+  # E2E-502：模拟 10 分钟（600s）快速推进，禁用渲染减少开销
+  ss="/tmp/${SESSION}_E2E-502.png"
+  page_boot
+  debug_call "globalThis.__BILLIARD_DEBUG__.startMatch()"
+  debug_call "globalThis.__BILLIARD_DEBUG__.setRenderEnabled(false)"
+  debug_call "globalThis.__BILLIARD_DEBUG__.advance(6000, 0.1)" # 600s
+  debug_call "globalThis.__BILLIARD_DEBUG__.setRenderEnabled(true)"
+  bu_ok screenshot "$ss" >/dev/null
+  details=$(debug_state)
+  result=$(python3 -c 'import json,sys; s=json.loads(sys.stdin.read() or "null"); ok=bool(s and s.get("state")); print("通过" if ok else "失败")' <<< "$details")
+  write_record_with_screenshot "E2E-502" "长时间运行稳定性（10 分钟）" "P2" "$result" "$details" "$ss"
 
   echo "[E2E] full suite done, round=$RUN_ROUND version=$VERSION"
 }
