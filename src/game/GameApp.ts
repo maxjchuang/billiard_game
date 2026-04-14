@@ -17,6 +17,7 @@ import { PhysicsWorld } from '../physics/PhysicsWorld'
 import { createBall } from '../physics/body/BallBody'
 import { Vector2 } from '../physics/math/Vector2'
 import { Renderer } from '../render/Renderer'
+import { RenderConfig } from '../config/RenderConfig'
 import type { Logger } from '../shared/logger/Logger'
 import { MatchScene } from './scenes/MatchScene'
 import { MenuScene } from './scenes/MenuScene'
@@ -66,9 +67,17 @@ export class GameApp {
       return false
     }
 
-    const systemInfo = this.wxAdapter.getSystemInfo()
-    canvas.width = systemInfo.screenWidth
-    canvas.height = systemInfo.screenHeight
+    if (this.wxAdapter.getRuntime() === 'browser') {
+      // 浏览器调试：画布尺寸贴合逻辑球桌 + HUD，避免窗口/画布过大
+      canvas.width = GameConfig.tableWidth
+      canvas.height = GameConfig.tableHeight + RenderConfig.hudHeight
+      canvas.style.width = `${canvas.width}px`
+      canvas.style.height = `${canvas.height}px`
+    } else {
+      const systemInfo = this.wxAdapter.getSystemInfo()
+      canvas.width = systemInfo.screenWidth
+      canvas.height = systemInfo.screenHeight
+    }
     this.renderer = new Renderer(ctx, this.logger)
     this.sceneManager.setScene(new MenuScene(this.logger), 'menu')
     this.stateMachine.transition('menu', 'boot-complete')
