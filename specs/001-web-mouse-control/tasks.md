@@ -121,7 +121,8 @@
 - [x] T031 [P] 更新 Web 调试玩法说明（鼠标交互流程）`README.md`
 - [x] T032 [P] 补充本 feature 的执行与验证记录 `specs/001-web-mouse-control/quickstart.md`
 - [x] T033 执行质量门禁并记录结果 `npm run lint`、`npm test`、`npm run build`（记录到 `specs/001-web-mouse-control/quickstart.md`）
-- [x] T034 [P] 清理临时代码与无效分支，确保实现最小闭环 `src/web.ts` 与 `src/game/GameApp.ts`
+- [x] T034 [P] 删除未使用导出/变量并通过类型检查 `src/web.ts` 与 `src/game/GameApp.ts`
+- [x] T035 [P] 校验无死代码告警且功能回归通过 `npm run lint` 与 `npm test`
 
 ---
 

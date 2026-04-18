@@ -2,7 +2,7 @@
 
 **Feature Branch**: `001-web-mouse-control`  
 **Created**: 2026-04-18  
-**Status**: Draft  
+**Status**: Implemented  
 **Input**: User description: "dev:web 模式下需要支持鼠标操作"
 
 ## User Scenarios & Testing *(mandatory)*
