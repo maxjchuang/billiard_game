@@ -3,6 +3,8 @@ import type { Logger } from '../shared/logger/Logger'
 export type InputIntent =
   | { type: 'start-match' }
   | { type: 'shoot'; angle: number; power: number }
+  | { type: 'preview-shot'; angle: number; power: number }
+  | { type: 'cancel-shot' }
   | { type: 'restart-match' }
   | { type: 'back-menu' }
 
