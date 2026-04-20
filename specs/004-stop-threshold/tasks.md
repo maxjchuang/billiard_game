@@ -7,7 +7,7 @@
 
 **Purpose**: 建立停球阈值回归测试的基础能力
 
-- [ ] T001 [P] Add speed helper (`speed = v·v` or `|v|`) for stop-threshold tests in `tests/physics/PhysicsWorld.test.ts`
+- [ ] T001 [P] Add speed magnitude helper (`|v|` in px/s) for stop-threshold tests in `tests/physics/PhysicsWorld.test.ts`
 
 ---
 
@@ -15,7 +15,7 @@
 
 **Purpose**: 先写回归测试锁定行为（TDD），再进入实现
 
-- [ ] T002 [US1] Add failing regression: ball speed below `0.1px/s` should stop within `0.2s` in `tests/physics/PhysicsWorld.test.ts`
+- [ ] T002 [US1] Add failing regression: once speed first drops below `0.1px/s`, the ball should be stopped within `0.2s` in `tests/physics/PhysicsWorld.test.ts`
 - [ ] T003 [US2] Add failing regression: ball speed above `0.1px/s` must not be forced to stop in `tests/physics/PhysicsWorld.test.ts`
 
 ---
