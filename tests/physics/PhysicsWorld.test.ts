@@ -8,10 +8,71 @@ import { PhysicsConfig } from '../../src/config/PhysicsConfig'
 
 const kineticEnergy = (mass: number, velocity: Vector2): number => 0.5 * mass * velocity.dot(velocity)
 
+const speedMagnitude = (velocity: Vector2): number => velocity.length()
+
 const totalKineticEnergy = (world: PhysicsWorld): number =>
   world.balls.reduce((sum, ball) => sum + kineticEnergy(ball.mass, ball.velocity), 0)
 
 describe('PhysicsWorld', () => {
+  it('stops within 0.2s once speed first drops below 0.1px/s', () => {
+    const logger = new MemoryLogger()
+    const ball = createBall({ id: 0, type: 'cue', number: 0, position: new Vector2(200, 200), velocity: new Vector2(0.101, 0) })
+
+    const world = new PhysicsWorld({
+      width: 640,
+      height: 360,
+      logger,
+      config: {
+        ...PhysicsConfig,
+        friction: 0.99
+      },
+      balls: [ball]
+    })
+
+    const dt = 1 / 120
+    const maxSteps = 24 // 0.2s @ 120Hz
+    let firstBelowStep: number | null = null
+    let stoppedStep: number | null = null
+
+    for (let i = 0; i < maxSteps; i += 1) {
+      world.step(dt)
+      const speed = speedMagnitude(ball.velocity)
+      if (firstBelowStep === null && speed < 0.1) {
+        firstBelowStep = i + 1
+      }
+      if (stoppedStep === null && speedMagnitude(ball.velocity) === 0) {
+        stoppedStep = i + 1
+        break
+      }
+    }
+
+    expect(firstBelowStep).not.toBeNull()
+    expect(stoppedStep).not.toBeNull()
+    if (firstBelowStep !== null && stoppedStep !== null) {
+      expect((stoppedStep - firstBelowStep) * dt).toBeLessThanOrEqual(0.2)
+    }
+  })
+
+  it('does not force stop when speed is at or above 0.1px/s', () => {
+    const logger = new MemoryLogger()
+    const ball = createBall({ id: 0, type: 'cue', number: 0, position: new Vector2(200, 200), velocity: new Vector2(0.1, 0) })
+
+    const world = new PhysicsWorld({
+      width: 640,
+      height: 360,
+      logger,
+      config: {
+        ...PhysicsConfig,
+        friction: 1,
+        minVelocity: 0.1
+      },
+      balls: [ball]
+    })
+
+    world.step(1 / 120)
+    expect(speedMagnitude(ball.velocity)).toBeGreaterThan(0)
+  })
+
   it('does not inject kinetic energy in a two-ball collision', () => {
     const logger = new MemoryLogger()
     const cueBall = createBall({ id: 0, type: 'cue', number: 0, position: new Vector2(100, 100), velocity: new Vector2(10, 0) })

@@ -7,7 +7,7 @@
 
 **Purpose**: 建立停球阈值回归测试的基础能力
 
-- [ ] T001 [P] Add speed magnitude helper (`|v|` in px/s) for stop-threshold tests in `tests/physics/PhysicsWorld.test.ts`
+- [X] T001 [P] Add speed magnitude helper (`|v|` in px/s) for stop-threshold tests in `tests/physics/PhysicsWorld.test.ts`
 
 ---
 
@@ -15,8 +15,8 @@
 
 **Purpose**: 先写回归测试锁定行为（TDD），再进入实现
 
-- [ ] T002 [US1] Add failing regression: once speed first drops below `0.1px/s`, the ball should be stopped within `0.2s` in `tests/physics/PhysicsWorld.test.ts`
-- [ ] T003 [US2] Add failing regression: ball speed above `0.1px/s` must not be forced to stop in `tests/physics/PhysicsWorld.test.ts`
+- [X] T002 [US1] Add failing regression: once speed first drops below `0.1px/s`, the ball should be stopped within `0.2s` in `tests/physics/PhysicsWorld.test.ts`
+- [X] T003 [US2] Add failing regression: ball speed above `0.1px/s` must not be forced to stop in `tests/physics/PhysicsWorld.test.ts`
 
 ---
 
@@ -26,8 +26,8 @@
 
 **Independent Test**: `npm test` 中的“低速 0.2s 内判停”回归用例通过
 
-- [ ] T004 [US1] Tune stop threshold to `0.1px/s` in `src/config/PhysicsConfig.ts`
-- [ ] T005 [US1] Ensure `applyStopThreshold` uses the configured threshold consistently in `src/physics/PhysicsWorld.ts`
+- [X] T004 [US1] Tune stop threshold to `0.1px/s` in `src/config/PhysicsConfig.ts`
+- [X] T005 [US1] Ensure `applyStopThreshold` uses the configured threshold consistently in `src/physics/PhysicsWorld.ts`
 
 ---
 
@@ -37,7 +37,7 @@
 
 **Independent Test**: 全量单测通过；“高于阈值不提前停球”用例通过
 
-- [ ] T006 [US2] Run and adjust tests if needed to keep existing behaviors intact in `tests/physics/PhysicsWorld.test.ts`
+- [X] T006 [US2] Run and adjust tests if needed to keep existing behaviors intact in `tests/physics/PhysicsWorld.test.ts`
 
 ---
 
@@ -45,7 +45,7 @@
 
 **Goal**: 通过质量门禁
 
-- [ ] T007 Run quality gates: `npm run lint`, `npm test`, `npm run build`
+- [X] T007 Run quality gates: `npm run lint`, `npm test`, `npm run build`
 
 ---
 
