@@ -167,3 +167,42 @@ try {
 }
 
 Write-Host "[OK] Changes committed $phase $commandName"
+
+# Auto-push (user preference): keep remote branch in sync after auto-commit.
+try {
+    # Prefer pushing to origin; if no upstream is set, set it.
+    $hasOrigin = $false
+    $savedEAP = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        git remote get-url origin 2>$null | Out-Null
+        $hasOrigin = $LASTEXITCODE -eq 0
+    } finally {
+        $ErrorActionPreference = $savedEAP
+    }
+
+    if ($hasOrigin) {
+        $savedEAP = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>$null | Out-Null
+            $hasUpstream = $LASTEXITCODE -eq 0
+
+            if ($hasUpstream) {
+                $out = git push 2>&1 | Out-String
+                if ($LASTEXITCODE -ne 0) { throw "git push failed: $out" }
+            } else {
+                $out = git push -u origin HEAD 2>&1 | Out-String
+                if ($LASTEXITCODE -ne 0) { throw "git push -u origin HEAD failed: $out" }
+            }
+        } finally {
+            $ErrorActionPreference = $savedEAP
+        }
+        Write-Host "[OK] Changes pushed to origin"
+    } else {
+        Write-Warning "[specify] Warning: No 'origin' remote; skipped auto-push"
+    }
+} catch {
+    Write-Warning "[specify] Error: $_"
+    exit 1
+}
