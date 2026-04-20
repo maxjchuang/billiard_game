@@ -85,7 +85,7 @@ export class PhysicsWorld {
       }
     }
 
-    const allStopped = this.balls.every((ball) => ball.pocketed || ball.velocity.length() <= this.config.minVelocity)
+    const allStopped = this.balls.every((ball) => ball.pocketed || ball.velocity.length() < this.config.minVelocity)
 
     this.lastFrame = {
       firstHitBallId,
@@ -154,7 +154,7 @@ export class PhysicsWorld {
   }
 
   private applyStopThreshold(ball: BallBody): void {
-    if (ball.velocity.length() <= this.config.minVelocity) {
+    if (ball.velocity.length() < this.config.minVelocity) {
       ball.velocity = Vector2.zero()
     }
   }
