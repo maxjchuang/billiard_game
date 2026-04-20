@@ -138,3 +138,15 @@ _git_out=$(git add . 2>&1) || { echo "[specify] Error: git add failed: $_git_out
 _git_out=$(git commit -q -m "$_commit_msg" 2>&1) || { echo "[specify] Error: git commit failed: $_git_out" >&2; exit 1; }
 
 echo "[OK] Changes committed ${_phase} ${_command_name}" >&2
+
+# Auto-push (user preference): keep remote branch in sync after auto-commit.
+if git remote get-url origin >/dev/null 2>&1; then
+    if git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
+        _git_out=$(git push 2>&1) || { echo "[specify] Error: git push failed: $_git_out" >&2; exit 1; }
+    else
+        _git_out=$(git push -u origin HEAD 2>&1) || { echo "[specify] Error: git push -u origin HEAD failed: $_git_out" >&2; exit 1; }
+    fi
+    echo "[OK] Changes pushed to origin" >&2
+else
+    echo "[specify] Warning: No 'origin' remote; skipped auto-push" >&2
+fi

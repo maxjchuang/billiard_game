@@ -179,8 +179,10 @@ export class PhysicsWorld {
     const impulseMagnitude = -(1 + this.config.ballRestitution) * speedAlongNormal / ((1 / first.mass) + (1 / second.mass))
     const impulse = normal.multiply(impulseMagnitude)
 
-    first.velocity = first.velocity.add(impulse.multiply(1 / first.mass))
-    second.velocity = second.velocity.subtract(impulse.multiply(1 / second.mass))
+    // Apply impulses in opposite directions along the collision normal.
+    // NOTE: Flipping these signs injects energy and causes "越撞越快".
+    first.velocity = first.velocity.subtract(impulse.multiply(1 / first.mass))
+    second.velocity = second.velocity.add(impulse.multiply(1 / second.mass))
 
     const overlap = minDistance - distance
     const correction = normal.multiply(overlap / 2)
