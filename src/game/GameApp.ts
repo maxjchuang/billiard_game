@@ -7,7 +7,7 @@ import { RoundResolver } from '../gameplay/flow/RoundResolver'
 import { ShotResolver } from '../gameplay/flow/ShotResolver'
 import { RuleEngine } from '../gameplay/rules/RuleEngine'
 import { GameSession, type ShotContext } from '../gameplay/session/GameSession'
-import { InputManager } from '../input/InputManager'
+import { InputManager, type InputIntent } from '../input/InputManager'
 import { AimController } from '../input/gesture/AimController'
 import { PowerController } from '../input/gesture/PowerController'
 import { DeviceService } from '../platform/wx/DeviceService'
@@ -43,6 +43,14 @@ export interface DebugAppState {
   lastShotCueBallPocketed: boolean
   lastShotBlackBallPocketed: boolean
   balls: Array<{ id: number; type: string; x: number; y: number; vx: number; vy: number; pocketed: boolean }>
+}
+
+export interface WebInputAvailability {
+  state: AppState
+  canShoot: boolean
+  canStartMatch: boolean
+  canRestart: boolean
+  canBackMenu: boolean
 }
 
 export class GameApp {
@@ -352,6 +360,35 @@ export class GameApp {
     }
   }
 
+  debugGetInputAvailability(): WebInputAvailability {
+    const state = this.stateMachine.current
+    return {
+      state,
+      canShoot: state === 'aiming' && Boolean(this.session && this.shotResolver),
+      canStartMatch: state === 'menu',
+      canRestart: state === 'aiming' || state === 'ballsMoving' || state === 'result',
+      canBackMenu: state !== 'menu' && state !== 'boot'
+    }
+  }
+
+  debugPreviewShot(angle: number, power: number): void {
+    if (this.stateMachine.current !== 'aiming' || !this.session) {
+      return
+    }
+    this.aimController.aimAngle = angle
+    this.powerController.powerPercent = Math.max(0, Math.min(1, power))
+    this.logger.info('GameApp', 'debug-preview-shot', { angle, power: this.powerController.powerPercent })
+  }
+
+  debugCancelShot(): void {
+    this.powerController.powerPercent = 0
+    this.logger.info('GameApp', 'debug-cancel-shot')
+  }
+
+  debugPushIntent(intent: InputIntent): void {
+    this.inputManager.pushIntent(intent)
+  }
+
   step(deltaTime: number): void {
     this.loop.tick(deltaTime)
   }
@@ -395,11 +432,29 @@ export class GameApp {
     const intents = this.inputManager.drainIntents()
     for (const intent of intents) {
       if (intent.type === 'start-match') {
+        if (this.stateMachine.current !== 'menu') {
+          this.logger.info('GameApp', 'ignore-start-match', { state: this.stateMachine.current })
+          continue
+        }
         this.startMatch()
         continue
       }
 
+      if (intent.type === 'preview-shot' && this.session) {
+        this.debugPreviewShot(intent.angle, intent.power)
+        continue
+      }
+
+      if (intent.type === 'cancel-shot') {
+        this.debugCancelShot()
+        continue
+      }
+
       if (intent.type === 'shoot' && this.session && this.shotResolver) {
+        if (this.stateMachine.current !== 'aiming') {
+          this.logger.info('GameApp', 'ignore-shoot-not-aiming', { state: this.stateMachine.current })
+          continue
+        }
         const cueBall = this.session.getBallById(0)
         if (!cueBall) {
           continue
@@ -413,10 +468,17 @@ export class GameApp {
       }
 
       if (intent.type === 'restart-match') {
+        if (this.stateMachine.current === 'boot' || this.stateMachine.current === 'menu') {
+          this.logger.info('GameApp', 'ignore-restart-match', { state: this.stateMachine.current })
+          continue
+        }
         this.startMatch()
       }
 
       if (intent.type === 'back-menu') {
+        if (this.stateMachine.current === 'boot' || this.stateMachine.current === 'menu') {
+          continue
+        }
         this.sceneManager.setScene(new MenuScene(this.logger), 'menu')
         this.stateMachine.transition('menu', 'back-menu')
       }
@@ -436,7 +498,7 @@ export class GameApp {
       cueBallPosition,
       aimAngle: this.aimController.aimAngle,
       title: GameConfig.title,
-      subtitle: `state=${this.stateMachine.current}`
+      subtitle: `state=${this.stateMachine.current} power=${this.powerController.powerPercent.toFixed(2)}`
     })
     this.sceneManager.render()
   }
