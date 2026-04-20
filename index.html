@@ -4,6 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Billiard Game (Web Debug)</title>
+    <script>
+      // GitHub Pages SPA fallback: restore deep link after 404.html redirects to the app root.
+      // See public/404.html.
+      ;(() => {
+        const redirect = sessionStorage.getItem('spa:redirect')
+        if (!redirect) return
+        sessionStorage.removeItem('spa:redirect')
+        history.replaceState(null, '', redirect)
+      })()
+    </script>
+    <script>
+      // Basic failure hint if the module fails to load/boot.
+      // (When boot succeeds, src/web.ts will update the status text.)
+      setTimeout(() => {
+        const el = document.getElementById('boot-status')
+        if (!el) return
+        if (el.textContent === 'booting') {
+          el.textContent = '加载失败：请刷新重试'
+        }
+      }, 5000)
+    </script>
     <style>
       html,
       body {

@@ -278,6 +278,33 @@ npm run dev:web
 4. `Esc` 或右键可取消当前蓄力
 5. 右上角可点击 `重开`、`返回菜单`
 
+### 3.2 构建 Web 静态站点（用于 GitHub Pages）
+
+> 说明：Web 静态站点产物会输出到 `dist-web/`，与小游戏 `dist/` 产物解耦。
+
+```bash
+npm run build:web
+```
+
+默认按 GitHub Pages 项目页子路径构建（`/billiard_game/`）。如果你 fork 后仓库名不同，可用环境变量覆盖：
+
+```bash
+BASE_PATH="/<your-repo-name>/" npm run build:web
+```
+
+本地预览（可选）：
+
+```bash
+npx vite preview --host 127.0.0.1 --port 4173
+```
+
+### 3.3 GitHub Pages 在线试玩
+
+当 `main` 分支合并后会自动构建并部署到 GitHub Pages。
+
+- 项目页地址：`https://maxjchuang.github.io/billiard_game/`
+- 支持刷新/深链访问：Pages 通过 `404.html` 回退到入口页，保证 SPA 入口可加载
+
 ### 4. 在微信开发者工具中运行
 
 1. 打开微信开发者工具
