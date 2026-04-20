@@ -1,3 +1,17 @@
+<!--
+Sync Impact Report
+
+- Version: 1.0.0 → 1.1.0
+- Modified principles: none
+- Added principles:
+  - 6. README 同步
+- Removed sections: none
+- Templates requiring updates:
+  - ✅ no template changes required
+- Follow-ups:
+  - none
+-->
+
 # Billiard Game Constitution
 
 ## Core Principles
@@ -17,7 +31,10 @@
 ### 5. Backward Compatibility
 `dev:web` 增量能力不得破坏微信小游戏原有链路。
 
+### 6. README 同步
+新增功能或关键改动 MUST 更新 `README.md` 的对外描述（目的、用法、运行方式等相关内容）；纯 bug fix 可不更新。
+
 ## Governance
 本宪章优先级高于 feature 文档；违反 MUST 条款的变更不得进入实现阶段。
 
-**Version**: 1.0.0 | **Ratified**: 2026-04-18 | **Last Amended**: 2026-04-18
+**Version**: 1.1.0 | **Ratified**: 2026-04-18 | **Last Amended**: 2026-04-20
