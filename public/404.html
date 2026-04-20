@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting...</title>
+    <script>
+      // GitHub Pages SPA deep-link fallback.
+      // When a user visits /<repo>/<path>, Pages serves 404.html. We persist the original
+      // location then redirect to the app root so the bundle can load successfully.
+      ;(() => {
+        try {
+          sessionStorage.setItem('spa:redirect', location.pathname + location.search + location.hash)
+        } catch {
+          // ignore
+        }
+        location.replace('/billiard_game/')
+      })()
+    </script>
+  </head>
+  <body>
+    Redirecting...
+  </body>
+</html>
+

@@ -11,6 +11,8 @@
 
 设计重点：在不破坏小游戏既有构建链路的前提下，为 Web 端增加独立的静态构建产物，并解决 GitHub Pages 的子路径部署与 SPA 刷新 404 的常见问题。
 
+关键约束确认：小游戏入口 `game.js` 会加载 `dist/game.js`（由 `npm run build` 产出），Web 静态站点产物必须与 `dist/` 解耦。
+
 ## Technical Context
 
 <!--

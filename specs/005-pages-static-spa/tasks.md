@@ -7,7 +7,7 @@
 
 **Purpose**: 明确构建/发布边界，避免与小游戏产物冲突
 
-- [ ] T001 盘点并确认现有构建产物入口关系（小游戏 `game.js` 引用 `dist/game.js`）并记录关键约束在 `specs/005-pages-static-spa/plan.md`
+- [X] T001 盘点并确认现有构建产物入口关系（小游戏 `game.js` 引用 `dist/game.js`）并记录关键约束在 `specs/005-pages-static-spa/plan.md`
 
 ---
 
@@ -17,9 +17,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 新增 Web 静态构建脚本（例如 `npm run build:web`）并确保输出目录与小游戏 `dist/` 分离（`package.json`, `vite.config.ts`）
-- [ ] T003 配置 Vite 的构建基路径以适配 GitHub Pages 项目页子路径（`vite.config.ts`）
-- [ ] T004 新增 GitHub Pages 部署工作流（main 合并后自动构建并部署）（`.github/workflows/pages.yml`）
+- [X] T002 新增 Web 静态构建脚本（例如 `npm run build:web`）并确保输出目录与小游戏 `dist/` 分离（`package.json`, `vite.config.ts`）
+- [X] T003 配置 Vite 的构建基路径以适配 GitHub Pages 项目页子路径（`vite.config.ts`）
+- [X] T004 新增 GitHub Pages 部署工作流（main 合并后自动构建并部署）（`.github/workflows/pages.yml`）
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -35,12 +35,12 @@
 
 > **NOTE: Write this test FIRST, ensure it FAILS before implementation**
 
-- [ ] T005 [P] [US1] 添加回归用例：静态构建产物具备正确的 Pages 子路径资源引用 + SPA 深链回退文件存在（`tests/web/PagesBuildArtifacts.test.ts`）
+- [X] T005 [P] [US1] 添加回归用例：静态构建产物具备正确的 Pages 子路径资源引用 + SPA 深链回退文件存在（`tests/web/PagesBuildArtifacts.test.ts`）
 
 ### Implementation for User Story 1
 
-- [ ] T006 [P] [US1] 确认并补齐 Web 入口在生产构建下可运行（静态资源引用正确）（`index.html`, `src/web/index.ts`, `src/web.ts`）
-- [ ] T007 [US1] 实现/验证静态产物可在子路径下正确加载（必要时调整资源路径/入口初始化）（`vite.config.ts`, `index.html`）
+- [X] T006 [P] [US1] 确认并补齐 Web 入口在生产构建下可运行（静态资源引用正确）（`index.html`, `src/web/index.ts`, `src/web.ts`）
+- [X] T007 [US1] 实现/验证静态产物可在子路径下正确加载（必要时调整资源路径/入口初始化）（`vite.config.ts`, `index.html`）
 
 **Checkpoint**: User Story 1 should be runnable from built static artifacts
 
@@ -54,8 +54,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T008 [US2] 配置工作流触发条件为 `push` 到 `main`（或 PR 合并等价路径），并把构建产物发布到 Pages（`.github/workflows/pages.yml`）
-- [ ] T009 [US2] 增加失败可追踪信息（明确 build/deploy 步骤、输出关键日志/失败原因）（`.github/workflows/pages.yml`）
+- [X] T008 [US2] 配置工作流触发条件为 `push` 到 `main`（或 PR 合并等价路径），并把构建产物发布到 Pages（`.github/workflows/pages.yml`）
+- [X] T009 [US2] 增加失败可追踪信息（明确 build/deploy 步骤、输出关键日志/失败原因）（`.github/workflows/pages.yml`）
 
 ---
 
@@ -67,8 +67,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T010 [US3] 增加 SPA 刷新/直达子路径的回退方案（例如提供 404 回退到入口页或等价策略）（`index.html`, `public/404.html` 或构建产物配置）
-- [ ] T011 [US3] 增加资源加载失败的用户可理解反馈（最小可行：入口加载失败提示/重试指引）（`index.html` 或 `src/web/ui/*`）
+- [X] T010 [US3] 增加 SPA 刷新/直达子路径的回退方案（例如提供 404 回退到入口页或等价策略）（`index.html`, `public/404.html` 或构建产物配置）
+- [X] T011 [US3] 增加资源加载失败的用户可理解反馈（最小可行：入口加载失败提示/重试指引）（`index.html` 或 `src/web/ui/*`）
 
 ---
 
@@ -76,8 +76,8 @@
 
 **Goal**: 通过质量门禁 + 满足宪章 README 同步要求
 
-- [ ] T012 更新 `README.md` 增加 GitHub Pages 试玩入口与部署说明（新增功能必须同步 README）（`README.md`）
-- [ ] T013 Run quality gates: `npm run lint`, `npm test`, `npm run build`（以及新增的 Web 构建命令，如有）（`package.json`）
+- [X] T012 更新 `README.md` 增加 GitHub Pages 试玩入口与部署说明（新增功能必须同步 README）（`README.md`）
+- [X] T013 Run quality gates: `npm run lint`, `npm test`, `npm run build`（以及新增的 Web 构建命令，如有）（`package.json`）
 
 ---
 
