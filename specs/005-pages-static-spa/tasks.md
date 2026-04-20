@@ -31,10 +31,16 @@
 
 **Independent Test**: 本地运行静态构建并用静态服务器预览，页面可加载并可交互
 
+### Tests for User Story 1 ⚠️
+
+> **NOTE: Write this test FIRST, ensure it FAILS before implementation**
+
+- [ ] T005 [P] [US1] 添加回归用例：静态构建产物具备正确的 Pages 子路径资源引用 + SPA 深链回退文件存在（`tests/web/PagesBuildArtifacts.test.ts`）
+
 ### Implementation for User Story 1
 
-- [ ] T005 [P] [US1] 确认并补齐 Web 入口在生产构建下可运行（静态资源引用正确）（`index.html`, `src/web/index.ts`, `src/web.ts`）
-- [ ] T006 [US1] 实现/验证静态产物可在子路径下正确加载（必要时调整资源路径/入口初始化）（`vite.config.ts`, `index.html`）
+- [ ] T006 [P] [US1] 确认并补齐 Web 入口在生产构建下可运行（静态资源引用正确）（`index.html`, `src/web/index.ts`, `src/web.ts`）
+- [ ] T007 [US1] 实现/验证静态产物可在子路径下正确加载（必要时调整资源路径/入口初始化）（`vite.config.ts`, `index.html`）
 
 **Checkpoint**: User Story 1 should be runnable from built static artifacts
 
@@ -48,8 +54,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] 配置工作流触发条件为 `push` 到 `main`（或 PR 合并等价路径），并把构建产物发布到 Pages（`.github/workflows/pages.yml`）
-- [ ] T008 [US2] 增加失败可追踪信息（明确 build/deploy 步骤、输出关键日志/失败原因）（`.github/workflows/pages.yml`）
+- [ ] T008 [US2] 配置工作流触发条件为 `push` 到 `main`（或 PR 合并等价路径），并把构建产物发布到 Pages（`.github/workflows/pages.yml`）
+- [ ] T009 [US2] 增加失败可追踪信息（明确 build/deploy 步骤、输出关键日志/失败原因）（`.github/workflows/pages.yml`）
 
 ---
 
@@ -61,8 +67,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T009 [US3] 增加 SPA 刷新/直达子路径的回退方案（例如提供 404 回退到入口页或等价策略）（`index.html`, `public/404.html` 或构建产物配置）
-- [ ] T010 [US3] 增加资源加载失败的用户可理解反馈（最小可行：入口加载失败提示/重试指引）（`index.html` 或 `src/web/ui/*`）
+- [ ] T010 [US3] 增加 SPA 刷新/直达子路径的回退方案（例如提供 404 回退到入口页或等价策略）（`index.html`, `public/404.html` 或构建产物配置）
+- [ ] T011 [US3] 增加资源加载失败的用户可理解反馈（最小可行：入口加载失败提示/重试指引）（`index.html` 或 `src/web/ui/*`）
 
 ---
 
@@ -70,18 +76,17 @@
 
 **Goal**: 通过质量门禁 + 满足宪章 README 同步要求
 
-- [ ] T011 更新 `README.md` 增加 GitHub Pages 试玩入口与部署说明（新增功能必须同步 README）（`README.md`）
-- [ ] T012 Run quality gates: `npm run lint`, `npm test`, `npm run build`（以及新增的 Web 构建命令，如有）（`package.json`）
+- [ ] T012 更新 `README.md` 增加 GitHub Pages 试玩入口与部署说明（新增功能必须同步 README）（`README.md`）
+- [ ] T013 Run quality gates: `npm run lint`, `npm test`, `npm run build`（以及新增的 Web 构建命令，如有）（`package.json`）
 
 ---
 
 ## Dependencies & Execution Order
 
-- Setup (T001) → Foundational (T002–T004) → US1 (T005–T006) → US2 (T007–T008) → US3 (T009–T010) → Gates (T011–T012)
+- Setup (T001) → Foundational (T002–T004) → US1 (T005–T007) → US2 (T008–T009) → US3 (T010–T011) → Gates (T012–T013)
 
 ## Parallel Opportunities
 
 - T002 与 T003 可并行推进（同一子系统但改动点不同，注意冲突）
 - T004 可在 T002 明确构建命令后推进（可部分并行编写工作流骨架）
 - T011 可在实现过程中并行起草（但以最终命令/URL 细节为准）
-

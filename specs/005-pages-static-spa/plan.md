@@ -33,7 +33,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- ✅ Test-First：对静态构建与路径回退的关键行为补充自动化验证（必要时）
+- ✅ Test-First：对静态构建、子路径资源加载、SPA 回退等关键行为补充自动化验证（至少 1 个可重复回归用例）
 - ✅ Layer Boundaries：仅在 Web 入口/构建/部署层做适配，不把规则/物理塞进 UI
 - ✅ Observability：发布失败可在 CI 日志中定位；必要时补充关键步骤日志
 - ✅ Quality Gates：确保 `npm run lint`、`npm test`、`npm run build` 通过
