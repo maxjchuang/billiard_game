@@ -7,7 +7,8 @@ export const PhysicsConfig = {
   railRestitution: 0.92,
   ballRestitution: 0.98,
   pocketCaptureRadius: 18,
-  maxCueSpeed: 38
+  // 标定：在 640px 桌面尺度下，满力度应能在合理时间内触发首碰
+  maxCueSpeed: 200
 }
 
 export type PhysicsConfigShape = typeof PhysicsConfig
