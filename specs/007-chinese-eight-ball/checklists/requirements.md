@@ -1,4 +1,4 @@
-# Specification Quality Checklist: 中式8球球组配置
+# Specification Quality Checklist: 中式8球开局与定组规则
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning  
 **Created**: 2026-04-21  
@@ -31,5 +31,5 @@
 
 ## Notes
 
-- 规格已将范围限制在“球组构成 + 开局摆球约束 + 重开恢复”，未扩展到完整中式8球判罚与胜负流程。
-- 采用了常见中式8球摆球默认：黑八位于球堆中部，前角两侧分别为不同组别球。
+- 规格已扩展为“球组构成 + 开局摆球约束 + 开球有效性与犯规处理 + 定组 + 8号胜负条件”。
+- 仍未扩展到全部中盘犯规细则，仅覆盖用户明确要求的中式8球规则范围。
