@@ -124,4 +124,32 @@ describe('PhysicsWorld', () => {
     expect(firstHitBallId).toBe(1)
     expect(logger.entries.some((entry) => entry.scope === 'PhysicsWorld' && entry.message === 'collision-ball')).toBe(true)
   })
+
+  it('pockets balls near inset pocket centers', () => {
+    const logger = new MemoryLogger()
+    const cueBall = createBall({
+      id: 0,
+      type: 'cue',
+      number: 0,
+      // With railThickness=20 and ballRadius=10, this is within 18px of the top-left pocket center (20,20).
+      position: new Vector2(30, 30),
+      velocity: Vector2.zero()
+    })
+    const world = new PhysicsWorld({
+      width: 640,
+      height: 360,
+      logger,
+      config: {
+        ...PhysicsConfig,
+        friction: 1,
+        minVelocity: 0
+      },
+      balls: [cueBall]
+    })
+
+    const frame = world.step(0)
+    expect(frame.pocketedBallIds).toEqual([0])
+    expect(cueBall.pocketed).toBe(true)
+    expect(logger.entries.some((e) => e.scope === 'PhysicsWorld' && e.message === 'ball-pocketed' && e.context?.ballId === 0)).toBe(true)
+  })
 })
