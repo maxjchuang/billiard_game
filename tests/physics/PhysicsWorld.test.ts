@@ -125,6 +125,23 @@ describe('PhysicsWorld', () => {
     expect(logger.entries.some((entry) => entry.scope === 'PhysicsWorld' && entry.message === 'collision-ball')).toBe(true)
   })
 
+  it('tracks distinct object-ball rail contacts during a break frame', () => {
+    const logger = new MemoryLogger()
+    const solid = createBall({ id: 1, type: 'solid', number: 1, position: new Vector2(10, 120), velocity: new Vector2(-20, 0) })
+    const stripe = createBall({ id: 9, type: 'stripe', number: 9, position: new Vector2(320, 350), velocity: new Vector2(0, 20) })
+    const world = new PhysicsWorld({
+      width: 640,
+      height: 360,
+      logger,
+      config: { ...PhysicsConfig, friction: 1, minVelocity: 0 },
+      balls: [createBall({ id: 0, type: 'cue', number: 0, position: new Vector2(120, 180) }), solid, stripe]
+    })
+
+    const frame = world.step(1 / 30)
+
+    expect(frame.objectBallRailContactIds.sort((a, b) => a - b)).toEqual([1, 9])
+  })
+
   it('pockets balls near inset pocket centers', () => {
     const logger = new MemoryLogger()
     const cueBall = createBall({
@@ -151,5 +168,21 @@ describe('PhysicsWorld', () => {
     expect(frame.pocketedBallIds).toEqual([0])
     expect(cueBall.pocketed).toBe(true)
     expect(logger.entries.some((e) => e.scope === 'PhysicsWorld' && e.message === 'ball-pocketed' && e.context?.ballId === 0)).toBe(true)
+  })
+
+  it('reports balls that fly off the table', () => {
+    const logger = new MemoryLogger()
+    const cueBall = createBall({ id: 0, type: 'cue', number: 0, position: new Vector2(639, 180), velocity: new Vector2(50, 0) })
+    const world = new PhysicsWorld({
+      width: 640,
+      height: 360,
+      logger,
+      config: { ...PhysicsConfig, friction: 1, minVelocity: 0 },
+      balls: [cueBall]
+    })
+
+    const frame = world.step(1)
+
+    expect(frame.ballsOffTable).toEqual([0])
   })
 })

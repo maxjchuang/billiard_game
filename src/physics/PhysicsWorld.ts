@@ -12,6 +12,8 @@ export interface TableDimensions {
 export interface PhysicsFrameResult {
   firstHitBallId: number | null
   pocketedBallIds: number[]
+  objectBallRailContactIds: number[]
+  ballsOffTable: number[]
   allStopped: boolean
 }
 
@@ -30,7 +32,13 @@ export class PhysicsWorld {
   private readonly pockets: Pocket[]
   private readonly layout: TableLayout
   private readonly config: PhysicsConfigShape
-  private lastFrame: PhysicsFrameResult = { firstHitBallId: null, pocketedBallIds: [], allStopped: true }
+  private lastFrame: PhysicsFrameResult = {
+    firstHitBallId: null,
+    pocketedBallIds: [],
+    objectBallRailContactIds: [],
+    ballsOffTable: [],
+    allStopped: true
+  }
 
   constructor(private readonly options: PhysicsWorldOptions) {
     this.config = options.config ?? PhysicsConfig
@@ -59,6 +67,8 @@ export class PhysicsWorld {
 
   step(dt: number): PhysicsFrameResult {
     const pocketedBallIds: number[] = []
+    const objectBallRailContactIds: number[] = []
+    const ballsOffTable: number[] = []
     let firstHitBallId: number | null = null
 
     for (const ball of this.balls) {
@@ -67,8 +77,13 @@ export class PhysicsWorld {
       }
 
       ball.position = ball.position.add(ball.velocity.multiply(dt))
+
+      if (this.handleBallOffTable(ball, ballsOffTable)) {
+        continue
+      }
+
       ball.velocity = ball.velocity.multiply(Math.pow(this.config.friction, dt * 120))
-      this.handleRailCollision(ball)
+      this.handleRailCollision(ball, objectBallRailContactIds)
       this.handlePocket(ball, pocketedBallIds)
       this.applyStopThreshold(ball)
     }
@@ -96,6 +111,8 @@ export class PhysicsWorld {
     this.lastFrame = {
       firstHitBallId,
       pocketedBallIds,
+      objectBallRailContactIds,
+      ballsOffTable,
       allStopped
     }
 
@@ -103,6 +120,8 @@ export class PhysicsWorld {
       dt,
       firstHitBallId,
       pocketedBallIds,
+      objectBallRailContactIds,
+      ballsOffTable,
       allStopped
     })
 
@@ -113,7 +132,7 @@ export class PhysicsWorld {
     return this.lastFrame
   }
 
-  private handleRailCollision(ball: BallBody): void {
+  private handleRailCollision(ball: BallBody, objectBallRailContactIds: number[]): void {
     const radius = ball.radius
     const minX = this.layout.feltRect.x + radius
     const minY = this.layout.feltRect.y + radius
@@ -142,8 +161,33 @@ export class PhysicsWorld {
     }
 
     if (collided) {
+      if (ball.type !== 'cue' && !objectBallRailContactIds.includes(ball.id)) {
+        objectBallRailContactIds.push(ball.id)
+      }
       this.options.logger.info('PhysicsWorld', 'collision-rail', { ballId: ball.id })
     }
+  }
+
+  private handleBallOffTable(ball: BallBody, ballsOffTable: number[]): boolean {
+    const radius = ball.radius
+    const isOffTable = (
+      ball.position.x < -radius
+      || ball.position.x > this.options.width + radius
+      || ball.position.y < -radius
+      || ball.position.y > this.options.height + radius
+    )
+
+    if (!isOffTable) {
+      return false
+    }
+
+    ball.active = false
+    ball.velocity = Vector2.zero()
+    if (!ballsOffTable.includes(ball.id)) {
+      ballsOffTable.push(ball.id)
+    }
+    this.options.logger.info('PhysicsWorld', 'ball-off-table', { ballId: ball.id })
+    return true
   }
 
   private handlePocket(ball: BallBody, pocketedBallIds: number[]): void {

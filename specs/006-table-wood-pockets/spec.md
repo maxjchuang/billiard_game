@@ -13,7 +13,6 @@
 - Q: 球洞的视觉层级如何处理？ → A: A（球洞在桌面层绘制，位于球的下方；不做“遮罩/吞球”效果）
 - Q: 木边厚度（`railThickness`）默认取值？ → A: 20
 - Q: 球洞中心点是否需要内缩？ → A: A（按 `railThickness` 内缩，保证洞口完整可见）
-
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - 桌面外观一眼可辨 (Priority: P1)

@@ -89,6 +89,8 @@ try {
       advance: (steps: number, dtSeconds: number) => app.debugAdvance(steps, dtSeconds),
       placeBall: (ballId: number, x: number, y: number) => app.debugPlaceBall(ballId, x, y),
       assignGroup: (group: 'solid' | 'stripe') => app.debugAssignCurrentPlayerGroup(group),
+      chooseGroup: (group: 'solid' | 'stripe') => app.debugChooseGroup(group),
+      chooseBreakOption: (option: 'behind-line-ball-in-hand' | 're-rack' | 'accept-table') => app.debugChooseBreakFoulOption(option),
       markAllGroupPocketed: (group: 'solid' | 'stripe') => app.debugMarkAllGroupPocketed(group),
       resolveShot: (shotContext: any) => app.debugResolveShot(shotContext),
       restartMatch: () => app.debugRestartMatch(),

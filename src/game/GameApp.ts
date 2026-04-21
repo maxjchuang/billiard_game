@@ -7,6 +7,7 @@ import { RoundResolver } from '../gameplay/flow/RoundResolver'
 import { ShotResolver } from '../gameplay/flow/ShotResolver'
 import { RuleEngine } from '../gameplay/rules/RuleEngine'
 import { GameSession, type ShotContext } from '../gameplay/session/GameSession'
+import { createChineseEightBallRack } from '../gameplay/session/createChineseEightBallRack'
 import { InputManager, type InputIntent } from '../input/InputManager'
 import { AimController } from '../input/gesture/AimController'
 import { PowerController } from '../input/gesture/PowerController'
@@ -14,7 +15,6 @@ import { DeviceService } from '../platform/wx/DeviceService'
 import { StorageService } from '../platform/wx/StorageService'
 import { WxAdapter } from '../platform/wx/WxAdapter'
 import { PhysicsWorld } from '../physics/PhysicsWorld'
-import { createBall } from '../physics/body/BallBody'
 import { Vector2 } from '../physics/math/Vector2'
 import { Renderer } from '../render/Renderer'
 import { RenderConfig } from '../config/RenderConfig'
@@ -42,6 +42,8 @@ export interface DebugAppState {
   lastShotPocketedBallIds: number[]
   lastShotCueBallPocketed: boolean
   lastShotBlackBallPocketed: boolean
+  pendingDecisionKind: string | null
+  pendingDecisionOptions: string[]
   balls: Array<{ id: number; type: string; x: number; y: number; vx: number; vy: number; pocketed: boolean }>
 }
 
@@ -51,6 +53,8 @@ export interface WebInputAvailability {
   canStartMatch: boolean
   canRestart: boolean
   canBackMenu: boolean
+  breakOptionActions: Array<'break-option-behind-line-ball-in-hand' | 'break-option-re-rack' | 'break-option-accept-table'>
+  groupSelectionActions: Array<'group-solid' | 'group-stripe'>
 }
 
 export class GameApp {
@@ -120,12 +124,7 @@ export class GameApp {
   }
 
   startMatch(): void {
-    const balls = [
-      createBall({ id: 0, type: 'cue', number: 0, position: new Vector2(160, 180) }),
-      createBall({ id: 1, type: 'solid', number: 1, position: new Vector2(420, 180) }),
-      createBall({ id: 9, type: 'stripe', number: 9, position: new Vector2(442, 170) }),
-      createBall({ id: 8, type: 'black', number: 8, position: new Vector2(442, 192) })
-    ]
+    const balls = createChineseEightBallRack()
 
     this.session = GameSession.createDemoSession(this.logger, balls)
     this.world = new PhysicsWorld({
@@ -144,17 +143,27 @@ export class GameApp {
   }
 
   private resetShotContext(): void {
+    const cueBall = this.session?.getBallById(0)
     this.currentShotContext = {
       firstHitBallId: null,
       pocketedBallIds: [],
       cueBallPocketed: false,
       blackBallPocketed: false,
       railHitAfterContact: true,
-      foulReasons: []
+      foulReasons: [],
+      isOpeningBreak: this.session?.tableState.shotCount === 0,
+      cueBallStartedBehindBreakLine: cueBall ? cueBall.position.x <= GameConfig.breakLineX : true,
+      objectBallRailContactIds: [],
+      ballsOffTable: []
     }
   }
 
-  private accumulateShotFrame(frame: { firstHitBallId: number | null; pocketedBallIds: number[] }): void {
+  private accumulateShotFrame(frame: {
+    firstHitBallId: number | null
+    pocketedBallIds: number[]
+    objectBallRailContactIds: number[]
+    ballsOffTable: number[]
+  }): void {
     if (!this.currentShotContext) {
       this.resetShotContext()
     }
@@ -178,6 +187,18 @@ export class GameApp {
     if (this.currentShotContext.pocketedBallIds.includes(8)) {
       this.currentShotContext.blackBallPocketed = true
     }
+
+    for (const ballId of frame.objectBallRailContactIds) {
+      if (!this.currentShotContext.objectBallRailContactIds.includes(ballId)) {
+        this.currentShotContext.objectBallRailContactIds.push(ballId)
+      }
+    }
+
+    for (const ballId of frame.ballsOffTable) {
+      if (!this.currentShotContext.ballsOffTable.includes(ballId)) {
+        this.currentShotContext.ballsOffTable.push(ballId)
+      }
+    }
   }
 
   /**
@@ -194,6 +215,14 @@ export class GameApp {
   debugShoot(angle: number, power: number): void {
     if (!this.session || !this.shotResolver) {
       this.logger.warn('GameApp', 'debug-shoot-no-session')
+      return
+    }
+
+    if (this.session.pendingDecision) {
+      this.logger.warn('GameApp', 'reject-shoot-pending-decision', {
+        kind: this.session.pendingDecision.kind,
+        source: 'debug'
+      })
       return
     }
 
@@ -307,6 +336,14 @@ export class GameApp {
     this.logger.info('GameApp', 'debug-assign-group', { group })
   }
 
+  debugChooseBreakFoulOption(option: 'behind-line-ball-in-hand' | 're-rack' | 'accept-table'): void {
+    this.debugPushIntent({ type: 'choose-break-foul-option', option })
+  }
+
+  debugChooseGroup(group: 'solid' | 'stripe'): void {
+    this.debugPushIntent({ type: 'choose-group', group })
+  }
+
   /**
    * Web Debug/自动化用：将某一组球标记为全部落袋（仅用于自动化构造场景）
    */
@@ -348,6 +385,8 @@ export class GameApp {
       lastShotPocketedBallIds: lastShot?.pocketedBallIds ?? [],
       lastShotCueBallPocketed: Boolean(lastShot?.cueBallPocketed),
       lastShotBlackBallPocketed: Boolean(lastShot?.blackBallPocketed),
+      pendingDecisionKind: session?.pendingDecision?.kind ?? null,
+      pendingDecisionOptions: session?.pendingDecision?.options ?? [],
       balls: balls.map((b) => ({
         id: b.id,
         type: b.type,
@@ -362,12 +401,23 @@ export class GameApp {
 
   debugGetInputAvailability(): WebInputAvailability {
     const state = this.stateMachine.current
+    const pendingDecision = this.session?.pendingDecision
     return {
       state,
-      canShoot: state === 'aiming' && Boolean(this.session && this.shotResolver),
+      canShoot: state === 'aiming' && Boolean(this.session && this.shotResolver) && !pendingDecision,
       canStartMatch: state === 'menu',
       canRestart: state === 'aiming' || state === 'ballsMoving' || state === 'result',
-      canBackMenu: state !== 'menu' && state !== 'boot'
+      canBackMenu: state !== 'menu' && state !== 'boot',
+      breakOptionActions: pendingDecision?.kind === 'break-foul-option'
+        ? [
+          'break-option-behind-line-ball-in-hand',
+          'break-option-re-rack',
+          'break-option-accept-table'
+        ]
+        : [],
+      groupSelectionActions: pendingDecision?.kind === 'group-selection'
+        ? ['group-solid', 'group-stripe']
+        : []
     }
   }
 
@@ -410,7 +460,11 @@ export class GameApp {
           cueBallPocketed: frame.pocketedBallIds.includes(0),
           blackBallPocketed: frame.pocketedBallIds.includes(8),
           railHitAfterContact: true,
-          foulReasons: []
+          foulReasons: [],
+          isOpeningBreak: this.session.tableState.shotCount === 0,
+          cueBallStartedBehindBreakLine: true,
+          objectBallRailContactIds: frame.objectBallRailContactIds,
+          ballsOffTable: frame.ballsOffTable
         }
 
         this.lastResolvedShotContext = shotContext
@@ -455,6 +509,12 @@ export class GameApp {
           this.logger.info('GameApp', 'ignore-shoot-not-aiming', { state: this.stateMachine.current })
           continue
         }
+        if (this.session.pendingDecision) {
+          this.logger.warn('GameApp', 'reject-shoot-pending-decision', {
+            kind: this.session.pendingDecision.kind
+          })
+          continue
+        }
         const cueBall = this.session.getBallById(0)
         if (!cueBall) {
           continue
@@ -465,6 +525,39 @@ export class GameApp {
         this.shotResolver.shoot(cueBall, intent.angle, intent.power)
         this.stateMachine.transition('ballsMoving', 'player-shoot')
         this.deviceService.vibrateShort()
+      }
+
+      if (intent.type === 'choose-break-foul-option') {
+        if (!this.session || this.session.pendingDecision?.kind !== 'break-foul-option') {
+          this.logger.warn('GameApp', 'reject-break-option', { option: intent.option })
+          continue
+        }
+        const resolution = this.session.resolvePendingDecision(intent.option)
+        if (!resolution) {
+          this.logger.warn('GameApp', 'reject-break-option', { option: intent.option, reason: 'resolution-failed' })
+          continue
+        }
+        if (resolution.restartRack) {
+          this.logger.info('GameApp', 'break-option-rerack', { option: intent.option })
+          this.startMatch()
+          continue
+        }
+        this.logger.info('GameApp', 'break-option-resolved', { option: intent.option })
+        continue
+      }
+
+      if (intent.type === 'choose-group') {
+        if (!this.session || this.session.pendingDecision?.kind !== 'group-selection') {
+          this.logger.warn('GameApp', 'reject-group-choice', { group: intent.group })
+          continue
+        }
+        const resolution = this.session.resolvePendingDecision(intent.group)
+        if (!resolution) {
+          this.logger.warn('GameApp', 'reject-group-choice', { group: intent.group, reason: 'resolution-failed' })
+          continue
+        }
+        this.logger.info('GameApp', 'group-choice-resolved', { group: intent.group })
+        continue
       }
 
       if (intent.type === 'restart-match') {
