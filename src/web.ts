@@ -15,7 +15,15 @@ try {
   // Web 调试壳：启动 RAF 循环驱动 GameApp.step()
   // 否则只会完成 boot，不会进入渲染/物理循环，画面看起来就只有状态条。
   if (app) {
-    const overlay = new WebHudOverlay()
+    const overlay = new WebHudOverlay({
+      getState: () => app.debugGetPhysicsHudState(),
+      setOpen: (isOpen) => app.debugSetPhysicsHudOpen(isOpen),
+      stageParameter: (key, valueText) => {
+        app.debugStagePhysicsParameter(key, valueText)
+      },
+      applyParameter: (key) => app.debugApplyPhysicsParameter(key),
+      resetParameters: () => app.debugResetPhysicsParameters()
+    })
     const controls = new WebControls((action) => {
       app.debugPushIntent(toControlIntent(action))
     })
@@ -41,7 +49,7 @@ try {
         previewShot: (angle, power) => app.debugPushIntent({ type: 'preview-shot', angle, power }),
         shoot: (angle, power) => app.debugPushIntent({ type: 'shoot', angle, power }),
         cancelPreview: () => app.debugPushIntent({ type: 'cancel-shot' }),
-        setStatus: (text) => overlay.setStatus(text)
+        setStatus: (text) => overlay.setInteractionStatus(text)
       },
       createDefaultLogger()
     )
@@ -93,6 +101,11 @@ try {
       chooseBreakOption: (option: 'behind-line-ball-in-hand' | 're-rack' | 'accept-table') => app.debugChooseBreakFoulOption(option),
       markAllGroupPocketed: (group: 'solid' | 'stripe') => app.debugMarkAllGroupPocketed(group),
       resolveShot: (shotContext: any) => app.debugResolveShot(shotContext),
+      setPhysicsHudOpen: (isOpen: boolean) => app.debugSetPhysicsHudOpen(isOpen),
+      stagePhysicsParameter: (key: string, valueText: string) => app.debugStagePhysicsParameter(key as any, valueText),
+      applyPhysicsParameter: (key: string) => app.debugApplyPhysicsParameter(key as any),
+      resetPhysicsParameters: () => app.debugResetPhysicsParameters(),
+      getPhysicsHudState: () => app.debugGetPhysicsHudState(),
       restartMatch: () => app.debugRestartMatch(),
       backMenu: () => app.debugBackMenu(),
       pause: () => app.debugPause(),
@@ -109,8 +122,9 @@ try {
       const availability = app.debugGetInputAvailability()
       controls.setAvailability(availability)
       if (!mouseController.active) {
-        overlay.setStatus(`state=${availability.state}`)
+        overlay.setInteractionStatus(`state=${availability.state}`)
       }
+      overlay.render(app.debugGetPhysicsHudState())
       requestAnimationFrame(tick)
     }
     requestAnimationFrame(tick)

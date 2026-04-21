@@ -1,4 +1,4 @@
-import type { PhysicsConfigShape } from '../../config/PhysicsConfig'
+import type { RuntimePhysicsConfig } from '../../config/PhysicsConfig'
 import type { BallBody } from '../../physics/body/BallBody'
 import { Vector2 } from '../../physics/math/Vector2'
 import type { Logger } from '../../shared/logger/Logger'
@@ -6,7 +6,7 @@ import type { Logger } from '../../shared/logger/Logger'
 export class ShotResolver {
   constructor(
     private readonly logger: Logger,
-    private readonly config: PhysicsConfigShape
+    private readonly config: RuntimePhysicsConfig
   ) {}
 
   shoot(cueBall: BallBody, aimAngle: number, powerPercent: number): Vector2 {

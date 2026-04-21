@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { GameConfig } from '../../src/config/GameConfig'
 import { GameApp } from '../../src/game/GameApp'
+import { getPhysicsHudParameter, getPhysicsHudState, stageAndApplyPhysicsParameter } from './physicsHudFixtures'
 import { MemoryLogger } from '../../src/shared/logger/Logger'
 
 describe('GameApp web input gating', () => {
@@ -87,5 +88,68 @@ describe('GameApp web input gating', () => {
     const state = app.debugGetState()
     expect(state.pendingDecisionKind).toBeNull()
     expect(state.playerGroups).toEqual({ p1: 'solid', p2: 'stripe' })
+  })
+
+  it('updates supported HUD parameters at runtime and keeps layout in sync', () => {
+    const logger = new MemoryLogger()
+    const app = new GameApp(logger)
+    app.startMatch()
+
+    app.debugSetPhysicsHudOpen(true)
+    const frictionResult = stageAndApplyPhysicsParameter(app, 'friction', '1.000')
+    const layoutResult = stageAndApplyPhysicsParameter(app, 'railThickness', '28')
+
+    const hudState = getPhysicsHudState(app)
+    const tableLayout = app.debugGetTableLayout()
+
+    expect(frictionResult.success).toBe(true)
+    expect(layoutResult.success).toBe(true)
+    expect(app.debugGetRuntimePhysicsConfig().friction).toBeCloseTo(1)
+    expect(app.debugGetRuntimePhysicsConfig().railThickness).toBe(28)
+    expect(tableLayout.feltRect.x).toBe(28)
+    expect(hudState.modifiedKeys).toEqual(expect.arrayContaining(['friction', 'railThickness']))
+    expect(logger.entries.some((entry) => entry.scope === 'GameApp' && entry.message === 'physics-parameter-applied')).toBe(true)
+    expect(logger.entries.some((entry) => entry.scope === 'PhysicsWorld' && entry.message === 'layout-refreshed')).toBe(true)
+  })
+
+  it('rejects invalid HUD edits without rolling back other applied parameters', () => {
+    const realLogger = new MemoryLogger()
+    const hudApp = new GameApp(realLogger)
+    hudApp.startMatch()
+    hudApp.debugSetPhysicsHudOpen(true)
+
+    const validResult = stageAndApplyPhysicsParameter(hudApp, 'ballRestitution', '1.05')
+    hudApp.debugStagePhysicsParameter('maxCueSpeed', 'oops')
+    const invalidResult = hudApp.debugApplyPhysicsParameter('maxCueSpeed')
+    const maxCueSpeed = getPhysicsHudParameter(hudApp, 'maxCueSpeed')
+
+    expect(validResult.success).toBe(true)
+    expect(invalidResult.success).toBe(false)
+    expect(hudApp.debugGetRuntimePhysicsConfig().ballRestitution).toBeCloseTo(1.05)
+    expect(hudApp.debugGetRuntimePhysicsConfig().maxCueSpeed).toBeGreaterThan(0)
+    expect(maxCueSpeed.isValid).toBe(false)
+    expect(hudApp.debugGetPhysicsHudState().lastError).toContain('未生效')
+    expect(realLogger.entries.some((entry) => entry.scope === 'GameApp' && entry.message === 'physics-parameter-rejected')).toBe(true)
+  })
+
+  it('resets runtime physics parameters back to defaults and clears dirty state', () => {
+    const logger = new MemoryLogger()
+    const app = new GameApp(logger)
+    app.startMatch()
+
+    stageAndApplyPhysicsParameter(app, 'friction', '1.000')
+    stageAndApplyPhysicsParameter(app, 'pocketCaptureRadius', '24')
+    expect(getPhysicsHudState(app).hasModifiedValues).toBe(true)
+
+    const resetResult = app.debugResetPhysicsParameters()
+    const hudState = getPhysicsHudState(app)
+    const friction = getPhysicsHudParameter(app, 'friction')
+
+    expect(resetResult.success).toBe(true)
+    expect(hudState.hasModifiedValues).toBe(false)
+    expect(hudState.modifiedKeys).toEqual([])
+    expect(friction.isDirty).toBe(false)
+    expect(app.debugGetRuntimePhysicsConfig().pocketCaptureRadius).toBe(18)
+    expect(logger.entries.some((entry) => entry.scope === 'GameApp' && entry.message === 'physics-parameters-reset')).toBe(true)
   })
 })

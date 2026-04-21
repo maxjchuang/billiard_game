@@ -18,9 +18,9 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 **Purpose**: Establish the shared runtime-config metadata and reusable verification helpers for the HUD feature.
 
-- [ ] T001 [P] Add runtime physics defaults/types export helpers in `src/config/PhysicsConfig.ts` and mark `fixedDt` as read-only diagnostic state
-- [ ] T002 [P] Add HUD-facing editable-parameter descriptor types and descriptor source in `src/config/PhysicsConfig.ts` and `src/config/RenderConfig.ts`
-- [ ] T003 [P] Create reusable physics HUD test fixtures/assertions in `tests/game/physicsHudFixtures.ts`
+- [X] T001 [P] Add runtime physics defaults/types export helpers in `src/config/PhysicsConfig.ts` and mark `fixedDt` as read-only diagnostic state
+- [X] T002 [P] Add HUD-facing editable-parameter descriptor types and descriptor source in `src/config/PhysicsConfig.ts` and `src/config/RenderConfig.ts`
+- [X] T003 [P] Create reusable physics HUD test fixtures/assertions in `tests/game/physicsHudFixtures.ts`
 
 ---
 
@@ -30,11 +30,11 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 **⚠️ CRITICAL**: No user story work should begin until this phase is complete.
 
-- [ ] T004 [P] Add failing runtime-config propagation regressions in `tests/game/GameApp.web-input.test.ts` and `tests/physics/PhysicsWorld.test.ts`
-- [ ] T005 [P] Add failing layout-refresh regressions for geometry-sensitive parameters in `tests/core/TableLayout.test.ts` and `tests/physics/PhysicsWorld.test.ts`
-- [ ] T006 Create runtime physics config orchestration and apply/reset APIs in `src/game/GameApp.ts` and `src/config/PhysicsConfig.ts`
-- [ ] T007 Implement geometry refresh hooks for `layout-refresh` parameters in `src/physics/PhysicsWorld.ts` and `src/shared/TableLayout.ts`
-- [ ] T008 Add shared logging for parameter apply/reject/reset flows in `src/game/GameApp.ts` and `src/physics/PhysicsWorld.ts`
+- [X] T004 [P] Add failing runtime-config propagation regressions in `tests/game/GameApp.web-input.test.ts` and `tests/physics/PhysicsWorld.test.ts`
+- [X] T005 [P] Add failing layout-refresh regressions for geometry-sensitive parameters in `tests/core/TableLayout.test.ts` and `tests/physics/PhysicsWorld.test.ts`
+- [X] T006 Create runtime physics config orchestration and apply/reset APIs in `src/game/GameApp.ts` and `src/config/PhysicsConfig.ts`
+- [X] T007 Implement geometry refresh hooks for `layout-refresh` parameters in `src/physics/PhysicsWorld.ts` and `src/shared/TableLayout.ts`
+- [X] T008 Add shared logging for parameter apply/reject/reset flows in `src/game/GameApp.ts` and `src/physics/PhysicsWorld.ts`
 
 **Checkpoint**: Runtime config ownership, refresh semantics, and baseline regressions are ready.
 
@@ -50,15 +50,15 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 > **NOTE: Complete T004 first and keep it failing until the implementation tasks below are done.**
 
-- [ ] T009 [P] [US1] Add failing HUD rendering and interaction regressions in `tests/game/GameApp.web-input.test.ts`
-- [ ] T010 [P] [US1] Add failing parameter-apply mode regressions in `tests/physics/PhysicsWorld.test.ts` and `tests/gameplay/ShotResolver.test.ts`
+- [X] T009 [P] [US1] Add failing HUD rendering and interaction regressions in `tests/game/GameApp.web-input.test.ts`
+- [X] T010 [P] [US1] Add failing parameter-apply mode regressions in `tests/physics/PhysicsWorld.test.ts` and `tests/gameplay/ShotResolver.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] Implement interactive parameter panel rendering and control wiring in `src/web/ui/WebHudOverlay.ts`
-- [ ] T012 [US1] Wire HUD callbacks into runtime config APIs in `src/web.ts` and `src/game/GameApp.ts`
-- [ ] T013 [US1] Apply `immediate` and `next-shot` parameter updates in `src/physics/PhysicsWorld.ts` and `src/gameplay/flow/ShotResolver.ts`
-- [ ] T014 [US1] Expose HUD-visible runtime summaries and modified indicators in `src/game/GameApp.ts`, `src/render/Renderer.ts`, and `src/render/layers/UIRenderer.ts`
+- [X] T011 [P] [US1] Implement interactive parameter panel rendering and control wiring in `src/web/ui/WebHudOverlay.ts`
+- [X] T012 [US1] Wire HUD callbacks into runtime config APIs in `src/web.ts` and `src/game/GameApp.ts`
+- [X] T013 [US1] Apply `immediate` and `next-shot` parameter updates in `src/physics/PhysicsWorld.ts` and `src/gameplay/flow/ShotResolver.ts`
+- [X] T014 [US1] Expose HUD-visible runtime summaries and modified indicators in `src/game/GameApp.ts`, `src/render/Renderer.ts`, and `src/render/layers/UIRenderer.ts`
 
 **Checkpoint**: User Story 1 is independently usable for in-session parameter tuning.
 
@@ -74,15 +74,15 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 > **NOTE: Keep validation regressions failing until the implementation tasks below are complete.**
 
-- [ ] T015 [P] [US2] Add failing invalid-input and partial-failure regressions in `tests/game/GameApp.web-input.test.ts` and `tests/physics/PhysicsWorld.test.ts`
-- [ ] T016 [P] [US2] Add failing HUD validation-state regressions in `tests/core/WebControlAvailability.test.ts`
+- [X] T015 [P] [US2] Add failing invalid-input and partial-failure regressions in `tests/game/GameApp.web-input.test.ts` and `tests/physics/PhysicsWorld.test.ts`
+- [X] T016 [P] [US2] Add failing HUD validation-state regressions in `tests/core/WebControlAvailability.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T017 [P] [US2] Implement parameter parsing, range validation, and descriptor-driven error messages in `src/game/GameApp.ts` and `src/config/PhysicsConfig.ts`
-- [ ] T018 [US2] Render invalid-state feedback and non-blocking apply failures in `src/web/ui/WebHudOverlay.ts`
-- [ ] T019 [US2] Ensure failed parameter updates do not roll back other active values in `src/game/GameApp.ts` and `src/physics/PhysicsWorld.ts`
-- [ ] T020 [US2] Add observability logs for validation rejection and partial-success update flows in `src/game/GameApp.ts` and `src/web/ui/WebHudOverlay.ts`
+- [X] T017 [P] [US2] Implement parameter parsing, range validation, and descriptor-driven error messages in `src/game/GameApp.ts` and `src/config/PhysicsConfig.ts`
+- [X] T018 [US2] Render invalid-state feedback and non-blocking apply failures in `src/web/ui/WebHudOverlay.ts`
+- [X] T019 [US2] Ensure failed parameter updates do not roll back other active values in `src/game/GameApp.ts` and `src/physics/PhysicsWorld.ts`
+- [X] T020 [US2] Add observability logs for validation rejection and partial-success update flows in `src/game/GameApp.ts` and `src/web/ui/WebHudOverlay.ts`
 
 **Checkpoint**: User Story 2 independently guarantees safe, validated tuning behavior.
 
@@ -98,16 +98,16 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 > **NOTE: Keep reset/default-state regressions failing until the implementation tasks below are complete.**
 
-- [ ] T021 [P] [US3] Add failing reset-to-default and dirty-state regressions in `tests/game/GameApp.web-input.test.ts`
-- [ ] T022 [P] [US3] Add failing layout-sync-after-reset regressions in `tests/core/TableLayout.test.ts` and `tests/physics/PhysicsWorld.test.ts`
-- [ ] T023 [P] [US3] Add failing non-obstruction and collapsed-HUD regressions in `tests/game/GameApp.web-input.test.ts` and `tests/core/WebControlAvailability.test.ts`
+- [X] T021 [P] [US3] Add failing reset-to-default and dirty-state regressions in `tests/game/GameApp.web-input.test.ts`
+- [X] T022 [P] [US3] Add failing layout-sync-after-reset regressions in `tests/core/TableLayout.test.ts` and `tests/physics/PhysicsWorld.test.ts`
+- [X] T023 [P] [US3] Add failing non-obstruction and collapsed-HUD regressions in `tests/game/GameApp.web-input.test.ts` and `tests/core/WebControlAvailability.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T024 [P] [US3] Implement reset-all-to-defaults behavior in `src/game/GameApp.ts` and `src/config/PhysicsConfig.ts`
-- [ ] T025 [US3] Render default-vs-modified state, reset controls, and collapsed/non-obstructive HUD behavior in `src/web/ui/WebHudOverlay.ts`
-- [ ] T026 [US3] Reapply layout-refresh synchronization during reset in `src/physics/PhysicsWorld.ts`, `src/shared/TableLayout.ts`, and `src/render/layers/TableRenderer.ts`
-- [ ] T027 [US3] Surface reset/apply status messaging in `src/game/GameApp.ts` and `src/render/layers/UIRenderer.ts`
+- [X] T024 [P] [US3] Implement reset-all-to-defaults behavior in `src/game/GameApp.ts` and `src/config/PhysicsConfig.ts`
+- [X] T025 [US3] Render default-vs-modified state, reset controls, and collapsed/non-obstructive HUD behavior in `src/web/ui/WebHudOverlay.ts`
+- [X] T026 [US3] Reapply layout-refresh synchronization during reset in `src/physics/PhysicsWorld.ts`, `src/shared/TableLayout.ts`, and `src/render/layers/TableRenderer.ts`
+- [X] T027 [US3] Surface reset/apply status messaging in `src/game/GameApp.ts` and `src/render/layers/UIRenderer.ts`
 
 **Checkpoint**: User Story 3 independently supports fast comparison and safe return to defaults.
 
@@ -117,9 +117,9 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 **Purpose**: Finalize docs, full regression coverage, and quality gates across all stories.
 
-- [ ] T028 [P] Update HUD tuning documentation and usage notes in `README.md` and `specs/008-physics-hud-config/quickstart.md`
-- [ ] T029 [P] Add final cross-story regression coverage for supported editable parameter descriptors and HUD summary output in `tests/game/GameApp.web-input.test.ts` and `tests/gameplay/ShotResolver.test.ts`
-- [ ] T030 Run quality gates via `package.json` scripts (`npm run lint`, `npm test`, `npm run build`) and fix any issues in impacted files under `src/`, `tests/`, and `README.md`
+- [X] T028 [P] Update HUD tuning documentation and usage notes in `README.md` and `specs/008-physics-hud-config/quickstart.md`
+- [X] T029 [P] Add final cross-story regression coverage for supported editable parameter descriptors and HUD summary output in `tests/game/GameApp.web-input.test.ts` and `tests/gameplay/ShotResolver.test.ts`
+- [X] T030 Run quality gates via `package.json` scripts (`npm run lint`, `npm test`, `npm run build`) and fix any issues in impacted files under `src/`, `tests/`, and `README.md`
 
 ---
 

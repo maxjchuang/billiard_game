@@ -67,4 +67,25 @@ describe('TableLayout', () => {
     expect(byId.bottomMiddle.center.x).toBe(width / 2)
     expect(byId.bottomMiddle.center.y).toBe(height - railThickness)
   })
+
+  it('recomputes feltRect and pocket capture radius from layout inputs', () => {
+    const compact = computeTableLayout({
+      width: 640,
+      height: 360,
+      railThickness: 20,
+      pocketCaptureRadius: 18,
+      pocketVisualRadius: 18
+    })
+    const roomy = computeTableLayout({
+      width: 640,
+      height: 360,
+      railThickness: 28,
+      pocketCaptureRadius: 24,
+      pocketVisualRadius: 24
+    })
+
+    expect(roomy.feltRect.x).toBe(28)
+    expect(roomy.feltRect.width).toBeLessThan(compact.feltRect.width)
+    expect(roomy.pockets.every((pocket) => pocket.captureRadius === 24)).toBe(true)
+  })
 })

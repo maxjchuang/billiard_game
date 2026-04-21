@@ -4,7 +4,7 @@ import { PhysicsWorld } from '../../src/physics/PhysicsWorld'
 import { createBall } from '../../src/physics/body/BallBody'
 import { Vector2 } from '../../src/physics/math/Vector2'
 import { MemoryLogger } from '../../src/shared/logger/Logger'
-import { PhysicsConfig } from '../../src/config/PhysicsConfig'
+import { PhysicsConfig, createRuntimePhysicsConfig } from '../../src/config/PhysicsConfig'
 
 const kineticEnergy = (mass: number, velocity: Vector2): number => 0.5 * mass * velocity.dot(velocity)
 
@@ -184,5 +184,51 @@ describe('PhysicsWorld', () => {
     const frame = world.step(1)
 
     expect(frame.ballsOffTable).toEqual([0])
+  })
+
+  it('applies immediate runtime-config changes without rebuilding the world', () => {
+    const logger = new MemoryLogger()
+    const runtimeConfig = createRuntimePhysicsConfig()
+    runtimeConfig.friction = 1
+    runtimeConfig.minVelocity = 0
+
+    const cueBall = createBall({ id: 0, type: 'cue', number: 0, position: new Vector2(200, 200), velocity: new Vector2(10, 0) })
+    const world = new PhysicsWorld({
+      width: 640,
+      height: 360,
+      logger,
+      config: runtimeConfig,
+      balls: [cueBall]
+    })
+
+    world.step(1 / 120)
+    expect(cueBall.velocity.x).toBeCloseTo(10)
+
+    runtimeConfig.friction = 0.5
+    world.step(1 / 120)
+    expect(cueBall.velocity.x).toBeCloseTo(5, 4)
+  })
+
+  it('refreshes cached layout after layout-sensitive parameter changes', () => {
+    const logger = new MemoryLogger()
+    const runtimeConfig = createRuntimePhysicsConfig()
+    const world = new PhysicsWorld({
+      width: 640,
+      height: 360,
+      logger,
+      config: runtimeConfig,
+      balls: [createBall({ id: 0, type: 'cue', number: 0, position: new Vector2(160, 180) })]
+    })
+
+    const before = world.getTableLayout()
+    runtimeConfig.railThickness = 28
+    runtimeConfig.pocketCaptureRadius = 24
+    world.refreshLayout('test-update')
+    const after = world.getTableLayout()
+
+    expect(after.feltRect.x).toBe(28)
+    expect(after.feltRect.width).toBeLessThan(before.feltRect.width)
+    expect(after.pockets[0]?.captureRadius).toBe(24)
+    expect(logger.entries.some((entry) => entry.scope === 'PhysicsWorld' && entry.message === 'layout-refreshed')).toBe(true)
   })
 })

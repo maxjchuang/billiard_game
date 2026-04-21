@@ -1,5 +1,6 @@
 import type { BallBody } from '../physics/body/BallBody'
 import { Vector2 } from '../physics/math/Vector2'
+import type { TableLayout } from '../shared/TableLayout'
 import { RenderConfig } from '../config/RenderConfig'
 import type { Logger } from '../shared/logger/Logger'
 import { BallRenderer } from './layers/BallRenderer'
@@ -13,8 +14,10 @@ export interface RenderSceneState {
   balls: BallBody[]
   cueBallPosition: Vector2
   aimAngle: number
+  tableLayout: TableLayout
   title: string
   subtitle: string
+  detail: string
 }
 
 export class Renderer {
@@ -42,19 +45,20 @@ export class Renderer {
     this.ctx.fillRect(0, 0, canvasWidth, hudHeight)
 
     // Render HUD in the top bar
-    this.uiRenderer.render(this.ctx, sceneState.title, sceneState.subtitle)
+    this.uiRenderer.render(this.ctx, sceneState.title, sceneState.subtitle, sceneState.detail)
 
     // Render table + balls + cue below the HUD bar
     this.ctx.save()
     this.ctx.translate(0, hudHeight)
-    this.tableRenderer.render(this.ctx, sceneState.width, sceneState.height)
+    this.tableRenderer.render(this.ctx, sceneState.width, sceneState.height, sceneState.tableLayout)
     this.ballRenderer.render(this.ctx, sceneState.balls)
     this.cueRenderer.render(this.ctx, sceneState.cueBallPosition, sceneState.aimAngle)
     this.ctx.restore()
 
     this.logger.info('Renderer', 'render-frame', {
       title: sceneState.title,
-      subtitle: sceneState.subtitle
+      subtitle: sceneState.subtitle,
+      detail: sceneState.detail
     })
   }
 }
