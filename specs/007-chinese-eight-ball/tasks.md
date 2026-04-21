@@ -13,8 +13,8 @@
 
 **Purpose**: Establish shared fixtures and constants used across all three user stories.
 
-- [ ] T001 [P] Create reusable Chinese 8-ball rack/shot fixtures in `tests/gameplay/support/chineseEightBallFixtures.ts`
-- [ ] T002 [P] Add shared rack-spot, break-line, and break-rule constants in `src/config/GameConfig.ts` and `src/config/RuleConfig.ts`
+- [x] T001 [P] Create reusable Chinese 8-ball rack/shot fixtures in `tests/gameplay/support/chineseEightBallFixtures.ts`
+- [x] T002 [P] Add shared rack-spot, break-line, and break-rule constants in `src/config/GameConfig.ts` and `src/config/RuleConfig.ts`
 
 ---
 
@@ -24,9 +24,9 @@
 
 **⚠️ CRITICAL**: No user story work should begin until this phase is complete.
 
-- [ ] T003 [P] Add failing rack bootstrap/restart regressions for a full 16-ball Chinese 8-ball setup in `tests/game/GameApp.web-input.test.ts`
-- [ ] T004 [P] Add failing opening-break telemetry and rule regressions in `tests/physics/PhysicsWorld.test.ts` and `tests/gameplay/RuleEngine.test.ts`
-- [ ] T005 [P] Add failing pending-decision and black-8 settlement regressions in `tests/gameplay/GameSession.test.ts` and `tests/gameplay/RoundResolver.test.ts`
+- [x] T003 [P] Add failing rack bootstrap/restart regressions for a full 16-ball Chinese 8-ball setup in `tests/game/GameApp.web-input.test.ts`
+- [x] T004 [P] Add failing opening-break telemetry and rule regressions in `tests/physics/PhysicsWorld.test.ts` and `tests/gameplay/RuleEngine.test.ts`
+- [x] T005 [P] Add failing pending-decision and black-8 settlement regressions in `tests/gameplay/GameSession.test.ts` and `tests/gameplay/RoundResolver.test.ts`
 
 **Checkpoint**: Shared fixtures, constants, and failing regression coverage are ready.
 
@@ -44,9 +44,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T006 [P] [US1] Implement a full legal rack builder in `src/gameplay/session/createChineseEightBallRack.ts`
-- [ ] T007 [US1] Wire legal rack creation into start/restart match bootstrap in `src/game/GameApp.ts`
-- [ ] T008 [US1] Update session/reset/debug helpers for full-rack state restoration in `src/gameplay/session/GameSession.ts` and `src/game/GameApp.ts`
+- [x] T006 [P] [US1] Implement a full legal rack builder in `src/gameplay/session/createChineseEightBallRack.ts`
+- [x] T007 [US1] Wire legal rack creation into start/restart match bootstrap in `src/game/GameApp.ts`
+- [x] T008 [US1] Update session/reset/debug helpers for full-rack state restoration in `src/gameplay/session/GameSession.ts` and `src/game/GameApp.ts`
 
 **Checkpoint**: User Story 1 is independently playable with a legal opening rack.
 
@@ -64,10 +64,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T009 [P] [US2] Extend per-shot telemetry with opening-break facts in `src/physics/PhysicsWorld.ts` and `src/gameplay/session/GameSession.ts`
-- [ ] T010 [US2] Implement break-valid, break-foul, and black-8 respot resolution in `src/gameplay/rules/RuleEngine.ts` and `src/gameplay/flow/RoundResolver.ts`
-- [ ] T011 [US2] Add break-foul choice state handling and shot blocking in `src/gameplay/session/GameSession.ts`, `src/input/InputManager.ts`, and `src/game/GameApp.ts`
-- [ ] T012 [US2] Add observability logs for break validation, foul-option creation, rejection paths, and black-8 respot handling in `src/gameplay/rules/RuleEngine.ts`, `src/gameplay/flow/RoundResolver.ts`, and `src/gameplay/session/GameSession.ts`
+- [x] T009 [P] [US2] Extend per-shot telemetry with opening-break facts in `src/physics/PhysicsWorld.ts` and `src/gameplay/session/GameSession.ts`
+- [x] T010 [US2] Implement break-valid, break-foul, and black-8 respot resolution in `src/gameplay/rules/RuleEngine.ts` and `src/gameplay/flow/RoundResolver.ts`
+- [x] T011 [US2] Add break-foul choice state handling and shot blocking in `src/gameplay/session/GameSession.ts`, `src/input/InputManager.ts`, and `src/game/GameApp.ts`
+- [x] T012 [US2] Add observability logs for break validation, foul-option creation, rejection paths, and black-8 respot handling in `src/gameplay/rules/RuleEngine.ts`, `src/gameplay/flow/RoundResolver.ts`, and `src/gameplay/session/GameSession.ts`
 
 **Checkpoint**: User Story 2 independently resolves opening-break outcomes according to Chinese 8-ball rules.
 
@@ -85,10 +85,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T013 [P] [US3] Implement first-legal-pot group assignment and mixed-pot pending choice in `src/gameplay/rules/RuleEngine.ts` and `src/gameplay/session/GameSession.ts`
-- [ ] T014 [US3] Add minimal Web/debug controls for break-option and group-choice actions in `src/web/ui/WebControls.ts`, `src/web/input/mapWebControlAction.ts`, and `src/input/InputManager.ts`
-- [ ] T015 [US3] Enforce legal versus illegal black-8 victory flow with pending-choice gating in `src/gameplay/flow/RoundResolver.ts`, `src/gameplay/rules/RuleEngine.ts`, and `src/game/GameApp.ts`
-- [ ] T016 [US3] Add observability logs for mixed-pot choice creation/resolution and legal versus illegal black-8 outcomes in `src/gameplay/rules/RuleEngine.ts`, `src/gameplay/session/GameSession.ts`, and `src/game/GameApp.ts`
+- [x] T013 [P] [US3] Implement first-legal-pot group assignment and mixed-pot pending choice in `src/gameplay/rules/RuleEngine.ts` and `src/gameplay/session/GameSession.ts`
+- [x] T014 [US3] Add minimal Web/debug controls for break-option and group-choice actions in `src/web/ui/WebControls.ts`, `src/web/input/mapWebControlAction.ts`, and `src/input/InputManager.ts`
+- [x] T015 [US3] Enforce legal versus illegal black-8 victory flow with pending-choice gating in `src/gameplay/flow/RoundResolver.ts`, `src/gameplay/rules/RuleEngine.ts`, and `src/game/GameApp.ts`
+- [x] T016 [US3] Add observability logs for mixed-pot choice creation/resolution and legal versus illegal black-8 outcomes in `src/gameplay/rules/RuleEngine.ts`, `src/gameplay/session/GameSession.ts`, and `src/game/GameApp.ts`
 
 **Checkpoint**: User Story 3 independently supports correct group ownership and black-8 win/loss outcomes.
 
@@ -98,9 +98,9 @@
 
 **Purpose**: Finalize user-facing documentation and run full validation across the completed feature.
 
-- [ ] T017 [P] Update Chinese 8-ball rule coverage and new player-choice controls in `README.md`
-- [ ] T018 Run quality gates for the feature using scripts in `package.json` (`npm run lint`, `npm test`, `npm run build`) and verify impacted paths under `src/` and `tests/`
-- [ ] T019 Validate manual scenarios in `specs/007-chinese-eight-ball/quickstart.md`, including the 10-second rack verification from `SC-001`, and record verification notes in `specs/007-chinese-eight-ball/quickstart.md`
+- [x] T017 [P] Update Chinese 8-ball rule coverage and new player-choice controls in `README.md`
+- [x] T018 Run quality gates for the feature using scripts in `package.json` (`npm run lint`, `npm test`, `npm run build`) and verify impacted paths under `src/` and `tests/`
+- [x] T019 Validate manual scenarios in `specs/007-chinese-eight-ball/quickstart.md`, including the 10-second rack verification from `SC-001`, and record verification notes in `specs/007-chinese-eight-ball/quickstart.md`
 
 ---
 

@@ -10,10 +10,12 @@ describe('InputManager', () => {
 
     inputManager.pushIntent({ type: 'start-match' })
     inputManager.pushIntent({ type: 'shoot', angle: 0.4, power: 0.8 })
+    inputManager.pushIntent({ type: 'choose-break-foul-option', option: 'accept-table' })
+    inputManager.pushIntent({ type: 'choose-group', group: 'solid' })
 
     const intents = inputManager.drainIntents()
 
-    expect(intents).toHaveLength(2)
-    expect(logger.entries.filter((entry) => entry.scope === 'InputManager' && entry.message === 'push-intent')).toHaveLength(2)
+    expect(intents).toHaveLength(4)
+    expect(logger.entries.filter((entry) => entry.scope === 'InputManager' && entry.message === 'push-intent')).toHaveLength(4)
   })
 })

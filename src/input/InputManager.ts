@@ -1,3 +1,4 @@
+import type { BreakFoulOption, GroupType } from '../gameplay/session/GameSession'
 import type { Logger } from '../shared/logger/Logger'
 
 export type InputIntent =
@@ -5,6 +6,8 @@ export type InputIntent =
   | { type: 'shoot'; angle: number; power: number }
   | { type: 'preview-shot'; angle: number; power: number }
   | { type: 'cancel-shot' }
+  | { type: 'choose-break-foul-option'; option: BreakFoulOption }
+  | { type: 'choose-group'; group: GroupType }
   | { type: 'restart-match' }
   | { type: 'back-menu' }
 

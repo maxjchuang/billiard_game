@@ -45,3 +45,15 @@
 - Unit tests: `tests/gameplay/RuleEngine.test.ts`, `tests/gameplay/GameSession.test.ts`, `tests/gameplay/RoundResolver.test.ts`
 - Physics telemetry tests: `tests/physics/PhysicsWorld.test.ts`
 - Match/bootstrap integration tests: `tests/game/` and `tests/gameplay/ShotResolver.test.ts`
+
+## Verification Notes
+
+### 2026-04-21 Implementation Session
+
+- `npm run lint` ✅
+- `npm test` ✅ (`37` tests passed in the CLI session)
+- `npm run build` ✅
+- Rack verification covered by `tests/game/GameApp.web-input.test.ts` with full `16`-ball composition, 5-row rack shape, restart reset, and black-8 center checks.
+- Opening-break validation covered by `tests/physics/PhysicsWorld.test.ts`, `tests/gameplay/RuleEngine.test.ts`, and `tests/gameplay/RoundResolver.test.ts`, including insufficient rails, cue-ball foul/off-table, and black-8 respot branches.
+- Group assignment and black-8 settlement covered by `tests/gameplay/GameSession.test.ts`, `tests/gameplay/RuleEngine.test.ts`, and `tests/game/GameApp.web-input.test.ts`, including mixed-pot pending choice, pending-choice shot blocking, early black loss, and legal-black outcome handling.
+- SC-001 10-second rack verification is supported by the deterministic rack layout and the direct debug-state assertions in `tests/game/GameApp.web-input.test.ts`; Web debug mode can be used for a final visual spot-check when needed.
