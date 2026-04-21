@@ -67,6 +67,7 @@
 - [ ] T009 [P] [US2] Extend per-shot telemetry with opening-break facts in `src/physics/PhysicsWorld.ts` and `src/gameplay/session/GameSession.ts`
 - [ ] T010 [US2] Implement break-valid, break-foul, and black-8 respot resolution in `src/gameplay/rules/RuleEngine.ts` and `src/gameplay/flow/RoundResolver.ts`
 - [ ] T011 [US2] Add break-foul choice state handling and shot blocking in `src/gameplay/session/GameSession.ts`, `src/input/InputManager.ts`, and `src/game/GameApp.ts`
+- [ ] T012 [US2] Add observability logs for break validation, foul-option creation, rejection paths, and black-8 respot handling in `src/gameplay/rules/RuleEngine.ts`, `src/gameplay/flow/RoundResolver.ts`, and `src/gameplay/session/GameSession.ts`
 
 **Checkpoint**: User Story 2 independently resolves opening-break outcomes according to Chinese 8-ball rules.
 
@@ -84,9 +85,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T012 [P] [US3] Implement first-legal-pot group assignment and mixed-pot pending choice in `src/gameplay/rules/RuleEngine.ts` and `src/gameplay/session/GameSession.ts`
-- [ ] T013 [US3] Add minimal Web/debug controls for break-option and group-choice actions in `src/web/ui/WebControls.ts`, `src/web/input/mapWebControlAction.ts`, and `src/input/InputManager.ts`
-- [ ] T014 [US3] Enforce legal versus illegal black-8 victory flow with pending-choice gating in `src/gameplay/flow/RoundResolver.ts`, `src/gameplay/rules/RuleEngine.ts`, and `src/game/GameApp.ts`
+- [ ] T013 [P] [US3] Implement first-legal-pot group assignment and mixed-pot pending choice in `src/gameplay/rules/RuleEngine.ts` and `src/gameplay/session/GameSession.ts`
+- [ ] T014 [US3] Add minimal Web/debug controls for break-option and group-choice actions in `src/web/ui/WebControls.ts`, `src/web/input/mapWebControlAction.ts`, and `src/input/InputManager.ts`
+- [ ] T015 [US3] Enforce legal versus illegal black-8 victory flow with pending-choice gating in `src/gameplay/flow/RoundResolver.ts`, `src/gameplay/rules/RuleEngine.ts`, and `src/game/GameApp.ts`
+- [ ] T016 [US3] Add observability logs for mixed-pot choice creation/resolution and legal versus illegal black-8 outcomes in `src/gameplay/rules/RuleEngine.ts`, `src/gameplay/session/GameSession.ts`, and `src/game/GameApp.ts`
 
 **Checkpoint**: User Story 3 independently supports correct group ownership and black-8 win/loss outcomes.
 
@@ -96,9 +98,9 @@
 
 **Purpose**: Finalize user-facing documentation and run full validation across the completed feature.
 
-- [ ] T015 [P] Update Chinese 8-ball rule coverage and new player-choice controls in `README.md`
-- [ ] T016 Run quality gates for the feature using scripts in `package.json` (`npm run lint`, `npm test`, `npm run build`) and verify impacted paths under `src/` and `tests/`
-- [ ] T017 Validate manual scenarios in `specs/007-chinese-eight-ball/quickstart.md` and record verification notes in `specs/007-chinese-eight-ball/quickstart.md`
+- [ ] T017 [P] Update Chinese 8-ball rule coverage and new player-choice controls in `README.md`
+- [ ] T018 Run quality gates for the feature using scripts in `package.json` (`npm run lint`, `npm test`, `npm run build`) and verify impacted paths under `src/` and `tests/`
+- [ ] T019 Validate manual scenarios in `specs/007-chinese-eight-ball/quickstart.md`, including the 10-second rack verification from `SC-001`, and record verification notes in `specs/007-chinese-eight-ball/quickstart.md`
 
 ---
 
@@ -119,7 +121,7 @@
 
 ### Task Flow
 
-- T001–T002 → T003–T005 → T006–T008 → T009–T011 → T012–T014 → T015–T017
+- T001–T002 → T003–T005 → T006–T008 → T009–T012 → T013–T016 → T017–T019
 
 ---
 
@@ -128,8 +130,8 @@
 - T001 and T002 can run in parallel because they touch separate test and config files.
 - T003, T004, and T005 can run in parallel once the shared fixtures/constants exist.
 - T006 and T009 can run in parallel after foundational tests land because they touch separate rack-building and telemetry seams.
-- T012 and T013 can run in parallel after the pending-decision model is defined.
-- T015 can run in parallel with final validation prep before T016.
+- T013 and T014 can run in parallel after the pending-decision model is defined.
+- T017 can run in parallel with final validation prep before T018.
 
 ---
 
