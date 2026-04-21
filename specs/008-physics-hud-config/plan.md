@@ -88,6 +88,8 @@ tests/
 │   └── WebControlAvailability.test.ts
 ├── game/
 │   └── GameApp.web-input.test.ts
+├── gameplay/
+│   └── ShotResolver.test.ts
 └── physics/
     └── PhysicsWorld.test.ts
 ```
@@ -107,10 +109,10 @@ tests/
 
 ### Phase 1 — Design
 
-- 在 `PhysicsConfig` 基础上抽出“默认值 + 参数描述 + 运行时可变值”模型。
+- 在 `PhysicsConfig` 基础上抽出“默认值 + 参数描述 + 运行时可变值”模型，并将 `fixedDt` 明确为只读诊断信息而非首版可编辑参数。
 - 为 `GameApp` 增加运行时参数更新入口，统一处理：合法性校验、应用、重置、dirty 状态与日志。
 - 为 `PhysicsWorld` 设计显式刷新机制，用于几何相关参数修改后的 rail / pocket 布局同步。
-- 为 `WebHudOverlay` 设计参数控件、修改状态提示、错误提示和恢复默认交互。
+- 为 `WebHudOverlay` 设计参数控件、修改状态提示、错误提示、恢复默认交互，以及小屏/折叠态下的不遮挡策略。
 - 明确 `TableRenderer` / `UIRenderer` 是否只展示状态摘要，避免承担交互逻辑。
 
 ### Phase 2 — Task Breakdown (created by `/speckit.tasks`)

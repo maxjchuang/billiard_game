@@ -4,9 +4,8 @@
 
 ### RuntimePhysicsConfig
 
-代表当前会话内实际生效的物理参数集合，初始值来源于默认 `PhysicsConfig`。
+代表当前会话内实际生效、且允许通过 HUD 编辑的物理参数集合，初始值来源于默认 `PhysicsConfig`。
 
-- **fixedDt**: 固定物理步长；首版只展示，不建议由 HUD 高频修改。
 - **friction**: 速度衰减系数。
 - **minVelocity**: 停球阈值。
 - **railRestitution**: 球与库边碰撞反弹系数。
@@ -15,9 +14,15 @@
 - **pocketCaptureRadius**: 袋口吸附/判袋半径。
 - **maxCueSpeed**: 出杆最大速度。
 
+### RuntimePhysicsDiagnostics
+
+代表 HUD 中可选展示、但不参与编辑与重置的只读诊断信息。
+
+- **fixedDt**: 固定物理步长，仅用于观察当前模拟参数，不属于首版可编辑参数集合。
+
 ### PhysicsParameterDescriptor
 
-描述一个可由 HUD 编辑的参数元数据。
+描述一个可由 HUD 编辑的参数元数据；首版仅覆盖 `RuntimePhysicsConfig` 中的可编辑字段，不包含 `fixedDt` 这类诊断项。
 
 - **key**: 参数唯一键，对应 `RuntimePhysicsConfig` 字段名。
 - **label**: HUD 显示名称。
@@ -64,6 +69,7 @@
 - 一个 `PhysicsHudState` 持有多个 `PhysicsParameterDraftState`。
 - 每个 `PhysicsParameterDraftState` 对应一个 `PhysicsParameterDescriptor` 与一个 `RuntimePhysicsConfig` 字段。
 - 每次成功或失败的参数修改都会产生一个 `PhysicsConfigApplyEvent`。
+- `RuntimePhysicsDiagnostics` 可被 HUD 读取展示，但不会生成 `PhysicsParameterDraftState`，也不会参与 reset-to-defaults 流程。
 - `PhysicsWorld` 与 `ShotResolver` 共享同一份 `RuntimePhysicsConfig`，但依据 `applyMode` 在不同时间点读取或刷新派生数据。
 
 ## Invariants
@@ -72,4 +78,5 @@
 - 非法输入不得写入 `RuntimePhysicsConfig`。
 - 任一参数应用失败时，其他已经成功生效的参数值不得被回滚。
 - `layout-refresh` 参数更新后，物理层 pocket/rail 派生数据必须与渲染层使用的共享布局保持一致。
+- `fixedDt` 等只读诊断信息不得被纳入可编辑参数描述符或默认值重置流程。
 - 当所有参数都等于 `defaultValue` 时，`PhysicsHudState.hasModifiedValues` 必须为 `false`。

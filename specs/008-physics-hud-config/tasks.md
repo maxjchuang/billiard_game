@@ -18,8 +18,8 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 **Purpose**: Establish the shared runtime-config metadata and reusable verification helpers for the HUD feature.
 
-- [ ] T001 [P] Add runtime physics defaults/types export helpers in `src/config/PhysicsConfig.ts`
-- [ ] T002 [P] Add HUD-facing parameter descriptor types and descriptor source in `src/config/PhysicsConfig.ts` and `src/config/RenderConfig.ts`
+- [ ] T001 [P] Add runtime physics defaults/types export helpers in `src/config/PhysicsConfig.ts` and mark `fixedDt` as read-only diagnostic state
+- [ ] T002 [P] Add HUD-facing editable-parameter descriptor types and descriptor source in `src/config/PhysicsConfig.ts` and `src/config/RenderConfig.ts`
 - [ ] T003 [P] Create reusable physics HUD test fixtures/assertions in `tests/game/physicsHudFixtures.ts`
 
 ---
@@ -100,13 +100,14 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 - [ ] T021 [P] [US3] Add failing reset-to-default and dirty-state regressions in `tests/game/GameApp.web-input.test.ts`
 - [ ] T022 [P] [US3] Add failing layout-sync-after-reset regressions in `tests/core/TableLayout.test.ts` and `tests/physics/PhysicsWorld.test.ts`
+- [ ] T023 [P] [US3] Add failing non-obstruction and collapsed-HUD regressions in `tests/game/GameApp.web-input.test.ts` and `tests/core/WebControlAvailability.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T023 [P] [US3] Implement reset-all-to-defaults behavior in `src/game/GameApp.ts` and `src/config/PhysicsConfig.ts`
-- [ ] T024 [US3] Render default-vs-modified state and reset controls in `src/web/ui/WebHudOverlay.ts`
-- [ ] T025 [US3] Reapply layout-refresh synchronization during reset in `src/physics/PhysicsWorld.ts`, `src/shared/TableLayout.ts`, and `src/render/layers/TableRenderer.ts`
-- [ ] T026 [US3] Surface reset/apply status messaging in `src/game/GameApp.ts` and `src/render/layers/UIRenderer.ts`
+- [ ] T024 [P] [US3] Implement reset-all-to-defaults behavior in `src/game/GameApp.ts` and `src/config/PhysicsConfig.ts`
+- [ ] T025 [US3] Render default-vs-modified state, reset controls, and collapsed/non-obstructive HUD behavior in `src/web/ui/WebHudOverlay.ts`
+- [ ] T026 [US3] Reapply layout-refresh synchronization during reset in `src/physics/PhysicsWorld.ts`, `src/shared/TableLayout.ts`, and `src/render/layers/TableRenderer.ts`
+- [ ] T027 [US3] Surface reset/apply status messaging in `src/game/GameApp.ts` and `src/render/layers/UIRenderer.ts`
 
 **Checkpoint**: User Story 3 independently supports fast comparison and safe return to defaults.
 
@@ -116,9 +117,9 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 **Purpose**: Finalize docs, full regression coverage, and quality gates across all stories.
 
-- [ ] T027 [P] Update HUD tuning documentation and usage notes in `README.md` and `specs/008-physics-hud-config/quickstart.md`
-- [ ] T028 [P] Add final cross-story regression coverage for supported parameter descriptors and HUD summary output in `tests/game/GameApp.web-input.test.ts` and `tests/gameplay/ShotResolver.test.ts`
-- [ ] T029 Run quality gates via `package.json` scripts (`npm run lint`, `npm test`, `npm run build`) and fix any issues in impacted files under `src/`, `tests/`, and `README.md`
+- [ ] T028 [P] Update HUD tuning documentation and usage notes in `README.md` and `specs/008-physics-hud-config/quickstart.md`
+- [ ] T029 [P] Add final cross-story regression coverage for supported editable parameter descriptors and HUD summary output in `tests/game/GameApp.web-input.test.ts` and `tests/gameplay/ShotResolver.test.ts`
+- [ ] T030 Run quality gates via `package.json` scripts (`npm run lint`, `npm test`, `npm run build`) and fix any issues in impacted files under `src/`, `tests/`, and `README.md`
 
 ---
 
@@ -139,7 +140,7 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 ### Task Flow
 
-- T001–T003 → T004–T008 → T009–T014 → T015–T020 → T021–T026 → T027–T029
+- T001–T003 → T004–T008 → T009–T014 → T015–T020 → T021–T027 → T028–T030
 
 ---
 
@@ -149,8 +150,8 @@ description: "Tasks for physics parameter real-time HUD configuration"
 - T004 and T005 can run in parallel once setup artifacts exist.
 - T009 and T010 can run in parallel after the foundational runtime seam is in place.
 - T015 and T016 can run in parallel because they cover different validation layers.
-- T021 and T022 can run in parallel before reset/default-state implementation.
-- T027 and T028 can run in parallel before the final quality-gate pass in T029.
+- T021, T022, and T023 can run in parallel before reset/default-state implementation.
+- T028 and T029 can run in parallel before the final quality-gate pass in T030.
 
 ---
 

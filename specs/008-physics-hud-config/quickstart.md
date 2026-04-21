@@ -13,6 +13,7 @@
 - 修改一个会影响默认状态标记的参数，确认 HUD 显示该参数已被修改。
 - 执行恢复默认，确认所有参数回到默认值且 HUD 清除“已修改”状态。
 - 调整一个 `layout-refresh` 参数（如 `railThickness` 或 `pocketCaptureRadius`），确认视觉布局与物理 pocket/rail 行为保持一致。
+- 在较小窗口或 HUD 折叠状态下重复检查，确认 HUD 不遮挡关键击球判断区域，且折叠后仍可重新访问全部参数。
 
 ## Regression checklist
 
