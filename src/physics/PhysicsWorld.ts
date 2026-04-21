@@ -2,6 +2,7 @@ import { PhysicsConfig, type PhysicsConfigShape } from '../config/PhysicsConfig'
 import type { BallBody } from './body/BallBody'
 import { Vector2 } from './math/Vector2'
 import type { Logger } from '../shared/logger/Logger'
+import { computeTableLayout, type TableLayout } from '../shared/TableLayout'
 
 export interface TableDimensions {
   width: number
@@ -18,6 +19,7 @@ export interface PhysicsFrameResult {
 
 interface Pocket {
   center: Vector2
+  captureRadius: number
 }
 
 interface PhysicsWorldOptions extends TableDimensions {
@@ -28,6 +30,7 @@ interface PhysicsWorldOptions extends TableDimensions {
 
 export class PhysicsWorld {
   private readonly pockets: Pocket[]
+  private readonly layout: TableLayout
   private readonly config: PhysicsConfigShape
   private lastFrame: PhysicsFrameResult = {
     firstHitBallId: null,
@@ -39,18 +42,21 @@ export class PhysicsWorld {
 
   constructor(private readonly options: PhysicsWorldOptions) {
     this.config = options.config ?? PhysicsConfig
-    this.pockets = [
-      { center: new Vector2(0, 0) },
-      { center: new Vector2(options.width / 2, 0) },
-      { center: new Vector2(options.width, 0) },
-      { center: new Vector2(0, options.height) },
-      { center: new Vector2(options.width / 2, options.height) },
-      { center: new Vector2(options.width, options.height) }
-    ]
+    this.layout = computeTableLayout({
+      width: options.width,
+      height: options.height,
+      railThickness: this.config.railThickness,
+      pocketCaptureRadius: this.config.pocketCaptureRadius
+    })
+    this.pockets = this.layout.pockets.map((pocket) => ({
+      center: new Vector2(pocket.center.x, pocket.center.y),
+      captureRadius: pocket.captureRadius
+    }))
 
     this.options.logger.info('PhysicsWorld', 'init', {
       width: options.width,
       height: options.height,
+      railThickness: this.config.railThickness,
       ballCount: options.balls.length
     })
   }
@@ -128,12 +134,14 @@ export class PhysicsWorld {
 
   private handleRailCollision(ball: BallBody, objectBallRailContactIds: number[]): void {
     const radius = ball.radius
-    const maxX = this.options.width - radius
-    const maxY = this.options.height - radius
+    const minX = this.layout.feltRect.x + radius
+    const minY = this.layout.feltRect.y + radius
+    const maxX = this.layout.feltRect.x + this.layout.feltRect.width - radius
+    const maxY = this.layout.feltRect.y + this.layout.feltRect.height - radius
     let collided = false
 
-    if (ball.position.x < radius) {
-      ball.position = new Vector2(radius, ball.position.y)
+    if (ball.position.x < minX) {
+      ball.position = new Vector2(minX, ball.position.y)
       ball.velocity = new Vector2(Math.abs(ball.velocity.x) * this.config.railRestitution, ball.velocity.y)
       collided = true
     } else if (ball.position.x > maxX) {
@@ -142,8 +150,8 @@ export class PhysicsWorld {
       collided = true
     }
 
-    if (ball.position.y < radius) {
-      ball.position = new Vector2(ball.position.x, radius)
+    if (ball.position.y < minY) {
+      ball.position = new Vector2(ball.position.x, minY)
       ball.velocity = new Vector2(ball.velocity.x, Math.abs(ball.velocity.y) * this.config.railRestitution)
       collided = true
     } else if (ball.position.y > maxY) {
@@ -184,7 +192,7 @@ export class PhysicsWorld {
 
   private handlePocket(ball: BallBody, pocketedBallIds: number[]): void {
     for (const pocket of this.pockets) {
-      if (ball.position.distanceTo(pocket.center) <= this.config.pocketCaptureRadius) {
+      if (ball.position.distanceTo(pocket.center) <= pocket.captureRadius) {
         ball.active = false
         ball.pocketed = true
         ball.velocity = Vector2.zero()

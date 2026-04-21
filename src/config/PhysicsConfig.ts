@@ -7,6 +7,8 @@ export const PhysicsConfig = {
   minVelocity: 0.1,
   railRestitution: 0.92,
   ballRestitution: 0.98,
+  // Visual/physics shared layout input (single source of truth lives in TableLayout)
+  railThickness: 20,
   pocketCaptureRadius: 18,
   // 标定：在 640px 桌面尺度下，满力度应能在合理时间内触发首碰
   maxCueSpeed: 200
