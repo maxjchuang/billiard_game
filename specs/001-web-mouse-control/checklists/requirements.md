@@ -31,4 +31,4 @@
 
 ## Notes
 
-- 规格可进入下一阶段，建议执行 `$speckit-clarify`（可选）后进入 `$speckit-plan`。
+- 规格可进入下一阶段，请先完成 `/speckit.clarify`，再进入 `/speckit.plan`。

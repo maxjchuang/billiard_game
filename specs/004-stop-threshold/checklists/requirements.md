@@ -31,5 +31,4 @@
 
 ## Notes
 
-- 本次规格无待澄清项，可直接进入 `/speckit.plan`。
-
+- 本次规格无待澄清项，仍需完成 `/speckit.clarify` 流程后再进入 `/speckit.plan`。
