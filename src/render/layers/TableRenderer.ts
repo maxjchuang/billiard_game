@@ -1,21 +1,13 @@
 import { RenderConfig } from '../../config/RenderConfig'
-import { PhysicsConfig } from '../../config/PhysicsConfig'
 import type { Logger } from '../../shared/logger/Logger'
-import { computeTableLayout } from '../../shared/TableLayout'
+import type { TableLayout } from '../../shared/TableLayout'
 
 export class TableRenderer {
-  private lastLoggedDimensions: { width: number; height: number } | null = null
+  private lastLoggedLayoutKey: string | null = null
 
   constructor(private readonly logger: Logger) {}
 
-  render(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-    const layout = computeTableLayout({
-      width,
-      height,
-      railThickness: PhysicsConfig.railThickness,
-      pocketCaptureRadius: PhysicsConfig.pocketCaptureRadius,
-      pocketVisualRadius: RenderConfig.pocketVisualRadius
-    })
+  render(ctx: CanvasRenderingContext2D, width: number, height: number, layout: TableLayout): void {
 
     // Wood rails/border (background)
     ctx.fillStyle = RenderConfig.railColor
@@ -40,12 +32,13 @@ export class TableRenderer {
       ctx.fill()
     }
 
-    if (this.lastLoggedDimensions?.width !== width || this.lastLoggedDimensions?.height !== height) {
-      this.lastLoggedDimensions = { width, height }
+    const layoutKey = `${width}x${height}:${layout.railThickness}:${layout.pockets.map((pocket) => pocket.captureRadius).join(',')}`
+    if (this.lastLoggedLayoutKey !== layoutKey) {
+      this.lastLoggedLayoutKey = layoutKey
       this.logger.info('TableRenderer', 'render-layout', {
         width,
         height,
-        railThickness: PhysicsConfig.railThickness,
+        railThickness: layout.railThickness,
         feltRect: layout.feltRect,
         pockets: layout.pockets.map((p) => ({ id: p.id, center: p.center, visualRadius: p.visualRadius }))
       })

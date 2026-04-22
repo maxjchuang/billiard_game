@@ -1,5 +1,24 @@
 import { GameConfig } from '../config/GameConfig'
-import { PhysicsConfig } from '../config/PhysicsConfig'
+import {
+  PhysicsConfig,
+  buildPhysicsApplySuccessMessage,
+  createPhysicsParameterDraftState,
+  createRuntimePhysicsConfig,
+  createRuntimePhysicsDiagnostics,
+  formatPhysicsParameterValue,
+  getPhysicsParameterDescriptor,
+  getPhysicsParameterDescriptors,
+  hasLayoutRefreshPhysicsChanges,
+  isPhysicsConfigAtDefaults,
+  listModifiedPhysicsParameterKeys,
+  parsePhysicsParameterValue,
+  type PhysicsConfigApplyEvent,
+  type PhysicsHudSnapshot,
+  type PhysicsParameterDraftState,
+  type PhysicsParameterKey,
+  type RuntimePhysicsConfig,
+  type RuntimePhysicsDiagnostics
+} from '../config/PhysicsConfig'
 import { StateMachine } from '../core/fsm/StateMachine'
 import { FixedStepLoop } from '../core/loop/FixedStepLoop'
 import { SceneManager } from '../core/scene/SceneManager'
@@ -18,6 +37,7 @@ import { PhysicsWorld } from '../physics/PhysicsWorld'
 import { Vector2 } from '../physics/math/Vector2'
 import { Renderer } from '../render/Renderer'
 import { RenderConfig } from '../config/RenderConfig'
+import { computeTableLayout, type TableLayout } from '../shared/TableLayout'
 import type { Logger } from '../shared/logger/Logger'
 import { MatchScene } from './scenes/MatchScene'
 import { MenuScene } from './scenes/MenuScene'
@@ -44,6 +64,11 @@ export interface DebugAppState {
   lastShotBlackBallPocketed: boolean
   pendingDecisionKind: string | null
   pendingDecisionOptions: string[]
+  runtimePhysics: RuntimePhysicsConfig
+  physicsDiagnostics: RuntimePhysicsDiagnostics
+  physicsHudOpen: boolean
+  physicsHudStatus: string
+  physicsHudModifiedKeys: PhysicsParameterKey[]
   balls: Array<{ id: number; type: string; x: number; y: number; vx: number; vy: number; pocketed: boolean }>
 }
 
@@ -76,6 +101,14 @@ export class GameApp {
 
   private currentShotContext: ShotContext | null = null
   private lastResolvedShotContext: ShotContext | null = null
+  private readonly runtimePhysicsConfig: RuntimePhysicsConfig
+  private readonly runtimePhysicsDiagnostics: RuntimePhysicsDiagnostics
+  private readonly physicsHudDrafts: Record<PhysicsParameterKey, PhysicsParameterDraftState>
+  private physicsHudOpen = RenderConfig.physicsHudDefaultOpen
+  private physicsHudLastAppliedAt: number | null = null
+  private physicsHudLastError: string | null = null
+  private physicsHudLastStatus = '准备就绪'
+  private physicsHudApplySequence = 0
 
   private renderEnabled = true
   private paused = false
@@ -89,6 +122,9 @@ export class GameApp {
     this.storageService = new StorageService(logger)
     this.deviceService = new DeviceService(logger)
     this.stateMachine = new StateMachine<AppState>('boot', logger)
+    this.runtimePhysicsConfig = createRuntimePhysicsConfig()
+    this.runtimePhysicsDiagnostics = createRuntimePhysicsDiagnostics()
+    this.physicsHudDrafts = this.createInitialPhysicsHudDrafts()
     this.loop = new FixedStepLoop(PhysicsConfig.fixedDt, (dt) => this.update(dt), logger)
   }
 
@@ -132,9 +168,9 @@ export class GameApp {
       height: GameConfig.tableHeight,
       balls,
       logger: this.logger,
-      config: PhysicsConfig
+      config: this.runtimePhysicsConfig
     })
-    this.shotResolver = new ShotResolver(this.logger, PhysicsConfig)
+    this.shotResolver = new ShotResolver(this.logger, this.runtimePhysicsConfig)
     this.roundResolver = new RoundResolver(new RuleEngine(this.logger), this.logger)
     this.resetShotContext()
     this.sceneManager.setScene(new MatchScene(this.logger), 'match')
@@ -365,6 +401,7 @@ export class GameApp {
     const balls = session?.tableState.balls ?? []
     const foulReasons = session?.lastRoundResult?.foulReasons ?? []
     const lastShot = this.lastResolvedShotContext ?? this.currentShotContext
+    const physicsHudState = this.debugGetPhysicsHudState()
 
     return {
       state: this.stateMachine.current,
@@ -387,6 +424,11 @@ export class GameApp {
       lastShotBlackBallPocketed: Boolean(lastShot?.blackBallPocketed),
       pendingDecisionKind: session?.pendingDecision?.kind ?? null,
       pendingDecisionOptions: session?.pendingDecision?.options ?? [],
+      runtimePhysics: { ...this.runtimePhysicsConfig },
+      physicsDiagnostics: { ...this.runtimePhysicsDiagnostics },
+      physicsHudOpen: physicsHudState.isOpen,
+      physicsHudStatus: physicsHudState.lastStatus,
+      physicsHudModifiedKeys: [...physicsHudState.modifiedKeys],
       balls: balls.map((b) => ({
         id: b.id,
         type: b.type,
@@ -428,6 +470,148 @@ export class GameApp {
     this.aimController.aimAngle = angle
     this.powerController.powerPercent = Math.max(0, Math.min(1, power))
     this.logger.info('GameApp', 'debug-preview-shot', { angle, power: this.powerController.powerPercent })
+  }
+
+  debugSetPhysicsHudOpen(isOpen: boolean): void {
+    this.physicsHudOpen = isOpen
+    this.logger.info('GameApp', 'physics-hud-open-changed', { isOpen })
+  }
+
+  debugTogglePhysicsHud(): void {
+    this.debugSetPhysicsHudOpen(!this.physicsHudOpen)
+  }
+
+  debugStagePhysicsParameter(key: PhysicsParameterKey, valueText: string): PhysicsParameterDraftState {
+    const parsed = parsePhysicsParameterValue(key, valueText)
+    const nextDraft: PhysicsParameterDraftState = {
+      valueText,
+      parsedValue: parsed.parsedValue,
+      isDirty: this.runtimePhysicsConfig[key] !== getPhysicsParameterDescriptor(key).defaultValue,
+      isValid: parsed.isValid,
+      message: parsed.message
+    }
+
+    this.physicsHudDrafts[key] = nextDraft
+    return nextDraft
+  }
+
+  debugApplyPhysicsParameter(key: PhysicsParameterKey): PhysicsConfigApplyEvent {
+    const draft = this.physicsHudDrafts[key]
+    const descriptor = getPhysicsParameterDescriptor(key)
+    if (!draft.isValid || draft.parsedValue === null) {
+      const reason = draft.message ?? `${descriptor.label}未生效`
+      this.physicsHudLastError = reason
+      this.physicsHudLastStatus = reason
+      this.logger.warn('GameApp', 'physics-parameter-rejected', {
+        key,
+        valueText: draft.valueText,
+        reason,
+        applyMode: descriptor.applyMode
+      })
+      return {
+        parameterKey: key,
+        requestedValue: draft.valueText,
+        appliedValue: null,
+        success: false,
+        reason,
+        applyMode: descriptor.applyMode
+      }
+    }
+
+    this.runtimePhysicsConfig[key] = draft.parsedValue
+    if (descriptor.applyMode === 'layout-refresh') {
+      this.refreshWorldLayout(`parameter:${key}`)
+    }
+
+    const message = buildPhysicsApplySuccessMessage(key, draft.parsedValue)
+    this.physicsHudApplySequence += 1
+    this.physicsHudLastAppliedAt = this.physicsHudApplySequence
+    this.physicsHudLastError = null
+    this.physicsHudLastStatus = message
+    this.physicsHudDrafts[key] = createPhysicsParameterDraftState(key, this.runtimePhysicsConfig, message)
+
+    this.logger.info('GameApp', 'physics-parameter-applied', {
+      key,
+      appliedValue: draft.parsedValue,
+      applyMode: descriptor.applyMode
+    })
+
+    return {
+      parameterKey: key,
+      requestedValue: draft.valueText,
+      appliedValue: draft.parsedValue,
+      success: true,
+      reason: message,
+      applyMode: descriptor.applyMode
+    }
+  }
+
+  debugResetPhysicsParameters(): PhysicsConfigApplyEvent {
+    const modifiedKeys = listModifiedPhysicsParameterKeys(this.runtimePhysicsConfig)
+    for (const descriptor of getPhysicsParameterDescriptors()) {
+      this.runtimePhysicsConfig[descriptor.key] = descriptor.defaultValue
+      this.physicsHudDrafts[descriptor.key] = createPhysicsParameterDraftState(descriptor.key, this.runtimePhysicsConfig)
+    }
+
+    if (hasLayoutRefreshPhysicsChanges(modifiedKeys)) {
+      this.refreshWorldLayout('reset-all')
+    }
+
+    this.physicsHudApplySequence += 1
+    this.physicsHudLastAppliedAt = this.physicsHudApplySequence
+    this.physicsHudLastError = null
+    this.physicsHudLastStatus = '已恢复默认物理参数'
+
+    this.logger.info('GameApp', 'physics-parameters-reset', {
+      modifiedKeys,
+      refreshedLayout: hasLayoutRefreshPhysicsChanges(modifiedKeys)
+    })
+
+    return {
+      parameterKey: 'reset-all',
+      requestedValue: modifiedKeys.length,
+      appliedValue: modifiedKeys.length,
+      success: true,
+      reason: this.physicsHudLastStatus,
+      applyMode: 'reset'
+    }
+  }
+
+  debugGetPhysicsHudState(): PhysicsHudSnapshot {
+    const modifiedKeys = listModifiedPhysicsParameterKeys(this.runtimePhysicsConfig)
+    return {
+      isOpen: this.physicsHudOpen,
+      parameters: getPhysicsParameterDescriptors().map((descriptor) => {
+        const draft = this.physicsHudDrafts[descriptor.key]
+        return {
+          ...descriptor,
+          currentValue: this.runtimePhysicsConfig[descriptor.key],
+          valueText: draft.valueText,
+          parsedValue: draft.parsedValue,
+          isDirty: this.runtimePhysicsConfig[descriptor.key] !== descriptor.defaultValue,
+          isValid: draft.isValid,
+          message: draft.message
+        }
+      }),
+      diagnostics: { ...this.runtimePhysicsDiagnostics },
+      hasModifiedValues: !isPhysicsConfigAtDefaults(this.runtimePhysicsConfig),
+      modifiedKeys,
+      lastAppliedAt: this.physicsHudLastAppliedAt,
+      lastError: this.physicsHudLastError,
+      lastStatus: this.physicsHudLastStatus
+    }
+  }
+
+  debugGetRuntimePhysicsConfig(): RuntimePhysicsConfig {
+    return { ...this.runtimePhysicsConfig }
+  }
+
+  debugGetPhysicsDiagnostics(): RuntimePhysicsDiagnostics {
+    return { ...this.runtimePhysicsDiagnostics }
+  }
+
+  debugGetTableLayout(): TableLayout {
+    return this.getRenderTableLayout()
   }
 
   debugCancelShot(): void {
@@ -578,20 +762,59 @@ export class GameApp {
     }
   }
 
+  private createInitialPhysicsHudDrafts(): Record<PhysicsParameterKey, PhysicsParameterDraftState> {
+    const drafts = {} as Record<PhysicsParameterKey, PhysicsParameterDraftState>
+    for (const descriptor of getPhysicsParameterDescriptors()) {
+      drafts[descriptor.key] = createPhysicsParameterDraftState(descriptor.key, this.runtimePhysicsConfig)
+    }
+    return drafts
+  }
+
+  private refreshWorldLayout(reason: string): void {
+    if (!this.world) {
+      return
+    }
+    this.world.refreshLayout(reason)
+    this.logger.info('GameApp', 'physics-layout-refresh', {
+      reason,
+      railThickness: this.runtimePhysicsConfig.railThickness,
+      pocketCaptureRadius: this.runtimePhysicsConfig.pocketCaptureRadius
+    })
+  }
+
+  private getRenderTableLayout(): TableLayout {
+    return this.world?.getTableLayout() ?? computeTableLayout({
+      width: GameConfig.tableWidth,
+      height: GameConfig.tableHeight,
+      railThickness: this.runtimePhysicsConfig.railThickness,
+      pocketCaptureRadius: this.runtimePhysicsConfig.pocketCaptureRadius,
+      pocketVisualRadius: this.runtimePhysicsConfig.pocketCaptureRadius
+    })
+  }
+
   private render(): void {
     if (!this.renderer || !this.renderEnabled) {
       return
     }
 
     const cueBallPosition = this.session?.getBallById(0)?.position ?? new Vector2(160, 180)
+    const hudState = this.debugGetPhysicsHudState()
+    const modifiedSummary = hudState.hasModifiedValues
+      ? `physics=${hudState.modifiedKeys.length} modified`
+      : 'physics=defaults'
+    const detail = hudState.hasModifiedValues
+      ? `modified=${hudState.modifiedKeys.map((key) => `${key}:${formatPhysicsParameterValue(key, this.runtimePhysicsConfig[key])}`).join(', ')}`
+      : `fixedDt=${this.runtimePhysicsDiagnostics.fixedDt.toFixed(4)} status=${hudState.lastStatus}`
     this.renderer.render({
       width: GameConfig.tableWidth,
       height: GameConfig.tableHeight,
       balls: this.session?.tableState.balls ?? [],
       cueBallPosition,
       aimAngle: this.aimController.aimAngle,
+      tableLayout: this.getRenderTableLayout(),
       title: GameConfig.title,
-      subtitle: `state=${this.stateMachine.current} power=${this.powerController.powerPercent.toFixed(2)}`
+      subtitle: `state=${this.stateMachine.current} power=${this.powerController.powerPercent.toFixed(2)} ${modifiedSummary}`,
+      detail
     })
     this.sceneManager.render()
   }

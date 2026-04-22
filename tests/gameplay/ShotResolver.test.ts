@@ -5,7 +5,7 @@ import { createBall } from '../../src/physics/body/BallBody'
 import { PhysicsWorld } from '../../src/physics/PhysicsWorld'
 import { Vector2 } from '../../src/physics/math/Vector2'
 import { MemoryLogger } from '../../src/shared/logger/Logger'
-import { PhysicsConfig } from '../../src/config/PhysicsConfig'
+import { PhysicsConfig, createRuntimePhysicsConfig } from '../../src/config/PhysicsConfig'
 
 describe('ShotResolver', () => {
   it('full-power shot hits the rack ball within 1.5s (<=180 steps @120Hz)', () => {
@@ -48,5 +48,22 @@ describe('ShotResolver', () => {
     expect(cueBall.velocity.x).toBeCloseTo(PhysicsConfig.maxCueSpeed * 0.5)
     expect(cueBall.velocity.y).toBeCloseTo(0)
     expect(logger.entries.some((entry) => entry.scope === 'ShotResolver' && entry.message === 'shoot')).toBe(true)
+  })
+
+  it('reads maxCueSpeed from the current runtime config on each shot', () => {
+    const logger = new MemoryLogger()
+    const runtimeConfig = createRuntimePhysicsConfig()
+    const resolver = new ShotResolver(logger, runtimeConfig)
+    const firstCueBall = createBall({ id: 0, type: 'cue', number: 0, position: new Vector2(0, 0) })
+    const secondCueBall = createBall({ id: 0, type: 'cue', number: 0, position: new Vector2(0, 0) })
+
+    runtimeConfig.maxCueSpeed = 140
+    resolver.shoot(firstCueBall, 0, 1)
+
+    runtimeConfig.maxCueSpeed = 220
+    resolver.shoot(secondCueBall, 0, 1)
+
+    expect(firstCueBall.velocity.x).toBeCloseTo(140)
+    expect(secondCueBall.velocity.x).toBeCloseTo(220)
   })
 })

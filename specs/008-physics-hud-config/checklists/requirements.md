@@ -1,8 +1,8 @@
-# Specification Quality Checklist: dev:web 鼠标操作支持
+# Specification Quality Checklist: 物理参数实时 HUD 配置
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning  
-**Created**: 2026-04-18  
-**Feature**: [spec.md](../spec.md)
+**Created**: 2026-04-21  
+**Feature**: [Link to spec.md](../spec.md)
 
 ## Content Quality
 
@@ -31,4 +31,5 @@
 
 ## Notes
 
-- 规格可进入下一阶段，请先完成 `/speckit.clarify`，再进入 `/speckit.plan`。
+- 默认将“受支持参数”定义为当前产品允许实时调节且直接影响运动、碰撞、反弹、停球或落袋表现的配置集合。
+- 首版明确不包含持久化保存、导入导出、多人共享和复杂权限控制，避免范围膨胀。

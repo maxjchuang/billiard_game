@@ -1,4 +1,4 @@
-import { PhysicsConfig, type PhysicsConfigShape } from '../config/PhysicsConfig'
+import { PhysicsConfig, type RuntimePhysicsConfig } from '../config/PhysicsConfig'
 import type { BallBody } from './body/BallBody'
 import { Vector2 } from './math/Vector2'
 import type { Logger } from '../shared/logger/Logger'
@@ -25,13 +25,13 @@ interface Pocket {
 interface PhysicsWorldOptions extends TableDimensions {
   balls: BallBody[]
   logger: Logger
-  config?: PhysicsConfigShape
+  config?: RuntimePhysicsConfig
 }
 
 export class PhysicsWorld {
-  private readonly pockets: Pocket[]
-  private readonly layout: TableLayout
-  private readonly config: PhysicsConfigShape
+  private pockets: Pocket[] = []
+  private layout: TableLayout
+  private readonly config: RuntimePhysicsConfig
   private lastFrame: PhysicsFrameResult = {
     firstHitBallId: null,
     pocketedBallIds: [],
@@ -41,17 +41,22 @@ export class PhysicsWorld {
   }
 
   constructor(private readonly options: PhysicsWorldOptions) {
-    this.config = options.config ?? PhysicsConfig
+    this.config = options.config ?? {
+      friction: PhysicsConfig.friction,
+      minVelocity: PhysicsConfig.minVelocity,
+      railRestitution: PhysicsConfig.railRestitution,
+      ballRestitution: PhysicsConfig.ballRestitution,
+      railThickness: PhysicsConfig.railThickness,
+      pocketCaptureRadius: PhysicsConfig.pocketCaptureRadius,
+      maxCueSpeed: PhysicsConfig.maxCueSpeed
+    }
     this.layout = computeTableLayout({
       width: options.width,
       height: options.height,
       railThickness: this.config.railThickness,
       pocketCaptureRadius: this.config.pocketCaptureRadius
     })
-    this.pockets = this.layout.pockets.map((pocket) => ({
-      center: new Vector2(pocket.center.x, pocket.center.y),
-      captureRadius: pocket.captureRadius
-    }))
+    this.refreshLayout('init')
 
     this.options.logger.info('PhysicsWorld', 'init', {
       width: options.width,
@@ -63,6 +68,30 @@ export class PhysicsWorld {
 
   get balls(): BallBody[] {
     return this.options.balls
+  }
+
+  getTableLayout(): TableLayout {
+    return this.layout
+  }
+
+  refreshLayout(reason: string = 'runtime-config'): void {
+    this.layout = computeTableLayout({
+      width: this.options.width,
+      height: this.options.height,
+      railThickness: this.config.railThickness,
+      pocketCaptureRadius: this.config.pocketCaptureRadius
+    })
+    this.pockets = this.layout.pockets.map((pocket) => ({
+      center: new Vector2(pocket.center.x, pocket.center.y),
+      captureRadius: pocket.captureRadius
+    }))
+
+    this.options.logger.info('PhysicsWorld', 'layout-refreshed', {
+      reason,
+      railThickness: this.config.railThickness,
+      pocketCaptureRadius: this.config.pocketCaptureRadius,
+      feltRect: this.layout.feltRect
+    })
   }
 
   step(dt: number): PhysicsFrameResult {

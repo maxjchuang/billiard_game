@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { GameApp } from '../../src/game/GameApp'
+import { getPhysicsHudParameter } from '../game/physicsHudFixtures'
 import { MemoryLogger } from '../../src/shared/logger/Logger'
 
 describe('Web control availability', () => {
@@ -20,5 +21,23 @@ describe('Web control availability', () => {
     expect(aimingAvailability.canShoot).toBe(true)
     expect(aimingAvailability.canRestart).toBe(true)
     expect(aimingAvailability.canBackMenu).toBe(true)
+  })
+
+  it('starts with a collapsed HUD and exposes validation state for parameter drafts', () => {
+    const app = new GameApp(new MemoryLogger())
+
+    const initialHudState = app.debugGetPhysicsHudState()
+    expect(initialHudState.isOpen).toBe(false)
+
+    app.debugSetPhysicsHudOpen(true)
+    app.debugStagePhysicsParameter('friction', '')
+    let friction = getPhysicsHudParameter(app, 'friction')
+    expect(friction.isValid).toBe(false)
+    expect(friction.message).toContain('未生效')
+
+    app.debugStagePhysicsParameter('friction', '0.999')
+    friction = getPhysicsHudParameter(app, 'friction')
+    expect(friction.isValid).toBe(true)
+    expect(app.debugGetPhysicsHudState().isOpen).toBe(true)
   })
 })

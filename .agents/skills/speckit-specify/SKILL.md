@@ -172,7 +172,7 @@ Given that feature description, do this:
       
       ## Notes
       
-      - Items marked incomplete require spec updates before `/speckit.clarify` or `/speckit.plan`
+      - Items marked incomplete require spec updates before `/speckit.clarify`; `/speckit.plan` may run only after clarification is completed or explicitly skipped with warning
       ```
 
    b. **Run Validation Check**: Review the spec against each checklist item:
@@ -230,7 +230,7 @@ Given that feature description, do this:
    - `SPECIFY_FEATURE_DIRECTORY` — the feature directory path
    - `SPEC_FILE` — the spec file path
    - Checklist results summary
-   - Readiness for the next phase (`/speckit.clarify` or `/speckit.plan`)
+  - Readiness for `/speckit.clarify` as the required next phase (`/speckit.plan` only after clarification is completed or explicitly skipped with warning)
 
 9. **Check for extension hooks**: After reporting completion, check if `.specify/extensions.yml` exists in the project root.
    - If it exists, read it and look for entries under the `hooks.after_specify` key

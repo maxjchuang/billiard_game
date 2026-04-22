@@ -1,15 +1,15 @@
 <!--
 Sync Impact Report
 
-- Version: 1.1.0 → 1.2.0
+- Version: 1.2.0 → 1.3.0
 - Modified principles: none
 - Added principles:
-  - 7. Analyze After Tasks
+-  - 7. Clarify Before Plan
 - Removed sections: none
 - Templates requiring updates:
-  - ✅ updated: .specify/templates/tasks-template.md
+  - ⚠ pending review: clarify/plan workflow guidance that references direct `/speckit.plan`
 - Follow-ups:
-  - none
+  - 如需强约束落地到模板文案，可在后续同步更新相关 checklist/plan 提示
 -->
 
 # Billiard Game Constitution
@@ -34,11 +34,15 @@ Sync Impact Report
 ### 6. README 同步
 新增功能或关键改动 MUST 更新 `README.md` 的对外描述（目的、用法、运行方式等相关内容）；纯 bug fix 可不更新。
 
-### 7. Analyze After Tasks
+### 7. Clarify Before Plan
+在执行 `/speckit.specify` 生成 `spec.md` 后，必须执行一次 `/speckit.clarify` 完成规格澄清；
+若未完成该步骤，不得进入 `/speckit.plan`。
+
+### 8. Analyze After Tasks
 在执行 `/speckit.tasks` 生成 `tasks.md` 后，必须执行一次 `/speckit.analyze` 并输出中文分析报告；
 若未完成该步骤，不得进入 `/speckit.implement`。
 
 ## Governance
 本宪章优先级高于 feature 文档；违反 MUST 条款的变更不得进入实现阶段。
 
-**Version**: 1.2.0 | **Ratified**: 2026-04-18 | **Last Amended**: 2026-04-20
+**Version**: 1.3.0 | **Ratified**: 2026-04-18 | **Last Amended**: 2026-04-21

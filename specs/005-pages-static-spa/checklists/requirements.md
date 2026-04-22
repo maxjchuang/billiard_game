@@ -31,5 +31,4 @@
 
 ## Notes
 
-- 本规格可直接进入 `/speckit.plan`。
-
+- 本规格需先完成 `/speckit.clarify`，再进入 `/speckit.plan`。
