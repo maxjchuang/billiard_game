@@ -37,7 +37,8 @@
 - **5. Backward Compatibility**: 不在非 Web 入口直接引入 DOM API，不破坏小游戏运行链路。
 - **6. README 同步**: 作为新增调试能力，需更新 `README.md` 说明 HUD 用途与 Web 端体验方式。
 - **7. Clarify Before Plan**: 已完成 `/speckit.clarify` 检查；未发现阻塞规划的关键歧义。
-- **8. Analyze After Tasks**: 在 `/speckit.tasks` 之后必须执行 `/speckit.analyze`，再进入 `/speckit.implement`。
+- **8. Visual Non-Overlap**: HUD、状态文字、按钮、配置面板与球桌核心可视区域在默认、展开、折叠、错误提示与小屏状态下都不得发生视觉重叠或遮挡关键击球判断信息。
+- **9. Analyze After Tasks**: 在 `/speckit.tasks` 之后必须执行 `/speckit.analyze`，再进入 `/speckit.implement`。
 
 ## Project Structure
 
@@ -126,6 +127,7 @@ tests/
 ## Post-Design Constitution Re-Check
 
 - 设计仍满足测试优先、分层边界、可观测性和小游戏兼容要求。
+- HUD 方案仍满足可见 UI 不重叠原则；通过折叠默认态、左上角布局与非阻挡回归测试覆盖关键状态。
 - 当前无需要记录的宪章违规项；复杂度可控，无需额外豁免。
 
 ## Complexity Tracking

@@ -31,7 +31,12 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **Test-First**: List the failing tests or regression coverage that must exist before implementation.
+- **Layer Boundaries**: Map each affected behavior to the owning layer so rules, physics, UI, and input responsibilities stay separated.
+- **Observability**: Identify logs or diagnostics required for new critical paths, rejects, and failure states.
+- **Quality Gates**: State how `npm run lint`, `npm test`, and `npm run build` will be verified before merge.
+- **Workflow Gates**: Confirm `/speckit.clarify` completed before this plan and `/speckit.analyze` will run after `/speckit.tasks` before `/speckit.implement`.
+- **Visual Layout Safety**: If the feature adds or changes visible UI, describe how HUD, buttons, status text, panels, overlays, and canvas content avoid visual overlap in supported states.
 
 ## Project Structure
 
