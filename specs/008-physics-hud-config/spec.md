@@ -78,6 +78,7 @@
 - **FR-010**: 系统 MUST 保证 HUD 在正常使用过程中不会遮挡到使玩家无法完成主要调试或击球判断的关键信息。
 - **FR-011**: 系统 MUST 将“受支持的可编辑物理参数”范围限定为当前产品允许用户实时调节、且会直接影响运动、碰撞、反弹、停球或落袋表现的参数集合；`fixedDt` 等只读诊断信息若被展示，不计入该集合。
 - **FR-012**: 系统 MUST 在 HUD 中反映当前配置是否处于“默认状态”还是“已修改状态”。
+- **FR-013**: 系统 MUST 保证 `web-hud-overlay` 与 `boot-status` 的 `element.boundary` 在页面上不发生重叠。
 
 ### Key Entities *(include if feature involves data)*
 
