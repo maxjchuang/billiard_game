@@ -10,7 +10,7 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 **Analyze (Required)**: After generating `tasks.md`, run `/speckit.analyze` and provide the report in 中文 before `/speckit.implement`.
 
-**Tests**: This feature follows the constitution’s test-first requirement, so regression tests are included and should fail before implementation.
+**Tests**: This feature follows the constitution’s test-first requirement, so regression tests are included and should fail before implementation. The `FR-013` extension adds explicit `element.boundary` non-overlap regressions for `web-hud-overlay` and `boot-status`.
 
 **Organization**: Tasks are grouped by user story so each story can be implemented and validated independently.
 
@@ -92,7 +92,7 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 **Goal**: Let the player quickly compare against defaults, reset all supported parameters, and keep layout-sensitive parameters visually and physically synchronized after reset.
 
-**Independent Test**: Modify several parameters, confirm they are marked as changed, trigger reset-to-defaults, and verify both the HUD state and the table behavior return to defaults immediately.
+**Independent Test**: Modify several parameters, confirm they are marked as changed, trigger reset-to-defaults, and verify both the HUD state and the table behavior return to defaults immediately while `web-hud-overlay` and `boot-status` remain boundary-separated in expanded, collapsed, and narrow-window states.
 
 ### Tests for User Story 3 ⚠️
 
@@ -109,6 +109,15 @@ description: "Tasks for physics parameter real-time HUD configuration"
 - [X] T026 [US3] Reapply layout-refresh synchronization during reset in `src/physics/PhysicsWorld.ts`, `src/shared/TableLayout.ts`, and `src/render/layers/TableRenderer.ts`
 - [X] T027 [US3] Surface reset/apply status messaging in `src/game/GameApp.ts` and `src/render/layers/UIRenderer.ts`
 
+### FR-013 Extension: HUD / Boot Status Boundary Separation
+
+> **NOTE: These tasks tighten User Story 3 acceptance so the visual non-overlap rule is measured by rectangle intersection, not by general “non-obstruction” judgment.**
+
+- [X] T031 [P] [US3] Add failing `element.boundary` non-overlap regressions for `web-hud-overlay` and `boot-status` across collapsed, expanded, validation-error, and long-copy states in `tests/game/GameApp.web-input.test.ts` and `tests/core/WebControlAvailability.test.ts`
+- [X] T032 [US3] Add testable overlay boundary helpers for HUD/status rectangles in `src/web/ui/WebHudOverlay.ts` and `tests/game/physicsHudFixtures.ts`
+- [X] T033 [US3] Implement reserved `boot-status` space detection and fallback HUD placement in `src/web/ui/WebHudOverlay.ts` and `src/web.ts`
+- [X] T034 [US3] Verify collapsed, expanded, narrow-window, validation-error, and long-copy placement rules do not regress HUD reachability and the named `FR-010` protected regions in `src/web/ui/WebHudOverlay.ts` and `tests/game/GameApp.web-input.test.ts`
+
 **Checkpoint**: User Story 3 independently supports fast comparison and safe return to defaults.
 
 ---
@@ -119,7 +128,8 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 - [X] T028 [P] Update HUD tuning documentation and usage notes in `README.md` and `specs/008-physics-hud-config/quickstart.md`
 - [X] T029 [P] Add final cross-story regression coverage for supported editable parameter descriptors and HUD summary output in `tests/game/GameApp.web-input.test.ts` and `tests/gameplay/ShotResolver.test.ts`
-- [X] T030 Run quality gates via `package.json` scripts (`npm run lint`, `npm test`, `npm run build`) and fix any issues in impacted files under `src/`, `tests/`, and `README.md`
+- [X] T030 Run pre-FR-013 quality gates via `package.json` scripts (`npm run lint`, `npm test`, `npm run build`) and fix any issues in impacted files under `src/`, `tests/`, and `README.md`
+- [X] T035 [P] Re-run targeted non-overlap regressions plus full FR-013 quality gates for validation-error and long-copy states in `tests/game/GameApp.web-input.test.ts`, `tests/core/WebControlAvailability.test.ts`, and `package.json` scripts
 
 ---
 
@@ -140,7 +150,7 @@ description: "Tasks for physics parameter real-time HUD configuration"
 
 ### Task Flow
 
-- T001–T003 → T004–T008 → T009–T014 → T015–T020 → T021–T027 → T028–T030
+- T001–T003 → T004–T008 → T009–T014 → T015–T020 → T021–T027 → T031–T034 → T028–T030 → T035
 
 ---
 
@@ -151,6 +161,8 @@ description: "Tasks for physics parameter real-time HUD configuration"
 - T009 and T010 can run in parallel after the foundational runtime seam is in place.
 - T015 and T016 can run in parallel because they cover different validation layers.
 - T021, T022, and T023 can run in parallel before reset/default-state implementation.
+- T031 and T032 can run in parallel before the FR-013 layout implementation in T033.
+- T023 covers the baseline named-scenario non-obstruction checks, while T031/T034 cover explicit rectangle separation and post-fix reachability.
 - T028 and T029 can run in parallel before the final quality-gate pass in T030.
 
 ---
@@ -182,7 +194,8 @@ Task: "Apply immediate and next-shot parameter updates in src/physics/PhysicsWor
 1. Deliver runtime config ownership and live HUD tuning (US1).
 2. Add safe validation and failure handling (US2).
 3. Add reset/default-state comparison and layout-refresh reset handling (US3).
-4. Finish with documentation, cross-story regressions, and full quality gates.
+4. Tighten US3 with explicit `web-hud-overlay` / `boot-status` boundary-separation regressions and placement fixes.
+5. Finish with documentation, cross-story regressions, and full quality gates.
 
 ### Team Strategy
 
@@ -197,4 +210,5 @@ Task: "Apply immediate and next-shot parameter updates in src/physics/PhysicsWor
 - `[P]` means the task can be worked on in parallel if staffing allows.
 - `[US1]`, `[US2]`, and `[US3]` map directly to the user stories in `specs/008-physics-hud-config/spec.md`.
 - Every story phase is designed to be independently testable before moving to the next one.
+- `T023` covers baseline non-obstruction scenarios for `FR-010`; `T031`–`T034` cover the stricter FR-013 rectangle-separation and reachability follow-up.
 - `/speckit.analyze` is required after this file is generated and before `/speckit.implement`.

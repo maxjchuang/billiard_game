@@ -2,8 +2,16 @@ import { describe, expect, it } from 'vitest'
 
 import { GameConfig } from '../../src/config/GameConfig'
 import { GameApp } from '../../src/game/GameApp'
-import { getPhysicsHudParameter, getPhysicsHudState, stageAndApplyPhysicsParameter } from './physicsHudFixtures'
+import {
+  createBootStatusBoundary,
+  estimateHudOverlaySize,
+  expectBoundariesSeparated,
+  getPhysicsHudParameter,
+  getPhysicsHudState,
+  stageAndApplyPhysicsParameter
+} from './physicsHudFixtures'
 import { MemoryLogger } from '../../src/shared/logger/Logger'
+import { calculateHudOverlayLayout } from '../../src/web/ui/WebHudOverlay'
 
 describe('GameApp web input gating', () => {
   it('starts and restarts with a legal 16-ball Chinese 8-ball rack', () => {
@@ -151,5 +159,39 @@ describe('GameApp web input gating', () => {
     expect(friction.isDirty).toBe(false)
     expect(app.debugGetRuntimePhysicsConfig().pocketCaptureRadius).toBe(18)
     expect(logger.entries.some((entry) => entry.scope === 'GameApp' && entry.message === 'physics-parameters-reset')).toBe(true)
+  })
+
+  it('keeps validation-error and long-copy HUD states non-overlapping with boot status', () => {
+    const logger = new MemoryLogger()
+    const app = new GameApp(logger)
+    app.startMatch()
+    app.debugSetPhysicsHudOpen(true)
+
+    app.debugStagePhysicsParameter('friction', '')
+    app.debugApplyPhysicsParameter('friction')
+
+    const errorState = getPhysicsHudState(app)
+    const errorLayout = calculateHudOverlayLayout({
+      viewportWidth: 430,
+      viewportHeight: 700,
+      overlaySize: estimateHudOverlaySize(errorState, { includeValidationError: true }),
+      bootStatusBoundary: createBootStatusBoundary({ right: 188, bottom: 48 }),
+      preferredOffset: 10,
+      preferredGap: 8
+    })
+
+    const longCopyLayout = calculateHudOverlayLayout({
+      viewportWidth: 430,
+      viewportHeight: 700,
+      overlaySize: estimateHudOverlaySize(errorState, { includeValidationError: true, longCopy: true }),
+      bootStatusBoundary: createBootStatusBoundary({ right: 240, bottom: 66 }),
+      preferredOffset: 10,
+      preferredGap: 8
+    })
+
+    expect(errorState.lastError).toContain('未生效')
+    expectBoundariesSeparated(errorLayout.hudBoundary, createBootStatusBoundary({ right: 188, bottom: 48 }))
+    expectBoundariesSeparated(longCopyLayout.hudBoundary, createBootStatusBoundary({ right: 240, bottom: 66 }))
+    expect(longCopyLayout.panelMaxHeight).toBeGreaterThanOrEqual(160)
   })
 })

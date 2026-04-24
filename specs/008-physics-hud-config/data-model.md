@@ -53,6 +53,14 @@
 - **lastAppliedAt**: 最近一次成功应用参数的时间戳或序号。
 - **lastError**: 最近一次失败反馈（若存在）。
 
+### OverlayLayoutBoundary
+
+代表 Web 顶层 UI 元素在页面中的布局边界，用于验证不重叠规则。
+
+- **elementId**: 元素标识，例如 `web-hud-overlay` 或 `boot-status`。
+- **top / right / bottom / left**: 元素边界矩形。
+- **visible**: 当前状态下元素是否可见并参与布局校验。
+
 ### PhysicsConfigApplyEvent
 
 代表一次用户触发的参数应用结果。
@@ -71,6 +79,7 @@
 - 每次成功或失败的参数修改都会产生一个 `PhysicsConfigApplyEvent`。
 - `RuntimePhysicsDiagnostics` 可被 HUD 读取展示，但不会生成 `PhysicsParameterDraftState`，也不会参与 reset-to-defaults 流程。
 - `PhysicsWorld` 与 `ShotResolver` 共享同一份 `RuntimePhysicsConfig`，但依据 `applyMode` 在不同时间点读取或刷新派生数据。
+- `web-hud-overlay` 与 `boot-status` 各自对应一个 `OverlayLayoutBoundary`；当二者都可见时，它们必须满足非重叠约束。
 
 ## Invariants
 
@@ -80,3 +89,4 @@
 - `layout-refresh` 参数更新后，物理层 pocket/rail 派生数据必须与渲染层使用的共享布局保持一致。
 - `fixedDt` 等只读诊断信息不得被纳入可编辑参数描述符或默认值重置流程。
 - 当所有参数都等于 `defaultValue` 时，`PhysicsHudState.hasModifiedValues` 必须为 `false`。
+- `web-hud-overlay` 与 `boot-status` 的 `OverlayLayoutBoundary` 在页面上不得有交集。
