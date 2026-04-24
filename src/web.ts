@@ -22,7 +22,23 @@ try {
         app.debugStagePhysicsParameter(key, valueText)
       },
       applyParameter: (key) => app.debugApplyPhysicsParameter(key),
-      resetParameters: () => app.debugResetPhysicsParameters()
+      resetParameters: () => app.debugResetPhysicsParameters(),
+      getReservedBoundary: () => {
+        if (!status) {
+          return null
+        }
+
+        const rect = status.getBoundingClientRect()
+        return {
+          elementId: 'boot-status',
+          left: rect.left,
+          top: rect.top,
+          right: rect.right,
+          bottom: rect.bottom,
+          visible: rect.width > 0 && rect.height > 0
+        }
+      },
+      getViewportSize: () => ({ width: window.innerWidth, height: window.innerHeight })
     })
     const controls = new WebControls((action) => {
       app.debugPushIntent(toControlIntent(action))

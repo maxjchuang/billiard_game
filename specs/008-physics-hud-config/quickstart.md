@@ -15,6 +15,8 @@
 - 调整一个 `layout-refresh` 参数（如 `railThickness` 或 `pocketCaptureRadius`），确认视觉布局与物理 pocket/rail 行为保持一致。
 - 调整 `maxCueSpeed` 后立即重新出杆，确认新值只影响下一杆而不回溯修改当前已出杆结果。
 - 在较小窗口或 HUD 折叠状态下重复检查，确认 HUD 不遮挡关键击球判断区域，且折叠后仍可重新访问全部参数。
+- 制造一个非法输入错误提示并拉长状态文案，确认 `web-hud-overlay` 与 `boot-status` 的 `element.boundary` 仍然没有重叠。
+- 在 `boot-status` 可见时检查 `web-hud-overlay` 的实际边界，确认两者的 `element.boundary` 没有任何重叠。
 
 ## Regression checklist
 

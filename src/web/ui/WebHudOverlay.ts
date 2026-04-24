@@ -1,12 +1,47 @@
 import { RenderConfig } from '../../config/RenderConfig'
 import type { PhysicsConfigApplyEvent, PhysicsHudSnapshot, PhysicsParameterKey } from '../../config/PhysicsConfig'
 
+export interface OverlayLayoutBoundary {
+  elementId: string
+  left: number
+  top: number
+  right: number
+  bottom: number
+  visible: boolean
+}
+
+export interface OverlayLayoutSize {
+  width: number
+  height: number
+}
+
+export interface OverlayViewportSize {
+  width: number
+  height: number
+}
+
+export interface OverlayLayoutInput {
+  viewportWidth: number
+  viewportHeight: number
+  overlaySize: OverlayLayoutSize
+  bootStatusBoundary: OverlayLayoutBoundary | null
+  preferredOffset: number
+  preferredGap: number
+}
+
+export interface OverlayLayoutResult {
+  hudBoundary: OverlayLayoutBoundary
+  panelMaxHeight: number
+}
+
 export interface WebHudOverlayHooks {
   getState: () => PhysicsHudSnapshot
   setOpen: (isOpen: boolean) => void
   stageParameter: (key: PhysicsParameterKey, valueText: string) => void
   applyParameter: (key: PhysicsParameterKey) => PhysicsConfigApplyEvent
   resetParameters: () => PhysicsConfigApplyEvent
+  getReservedBoundary?: () => OverlayLayoutBoundary | null
+  getViewportSize?: () => OverlayViewportSize
 }
 
 interface ParameterRowRefs {
@@ -16,6 +51,45 @@ interface ParameterRowRefs {
   message: HTMLDivElement
   dirtyBadge: HTMLSpanElement
   applyButton: HTMLButtonElement
+}
+
+export function rectanglesOverlap(a: OverlayLayoutBoundary | null, b: OverlayLayoutBoundary | null): boolean {
+  if (!a || !b || !a.visible || !b.visible) {
+    return false
+  }
+
+  return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom)
+}
+
+export function calculateHudOverlayLayout(input: OverlayLayoutInput): OverlayLayoutResult {
+  const widthWithinViewport = Math.min(input.overlaySize.width, Math.max(0, input.viewportWidth - input.preferredOffset * 2))
+  const initialBoundary: OverlayLayoutBoundary = {
+    elementId: 'web-hud-overlay',
+    left: input.preferredOffset,
+    top: input.preferredOffset,
+    right: input.preferredOffset + widthWithinViewport,
+    bottom: input.preferredOffset + input.overlaySize.height,
+    visible: true
+  }
+
+  const top = rectanglesOverlap(initialBoundary, input.bootStatusBoundary)
+    ? Math.max(input.preferredOffset, (input.bootStatusBoundary?.bottom ?? input.preferredOffset) + input.preferredGap)
+    : input.preferredOffset
+
+  const availableHeight = Math.max(0, input.viewportHeight - top - input.preferredOffset)
+  const heightWithinViewport = Math.min(input.overlaySize.height, availableHeight || input.overlaySize.height)
+
+  return {
+    hudBoundary: {
+      elementId: 'web-hud-overlay',
+      left: input.preferredOffset,
+      top,
+      right: input.preferredOffset + widthWithinViewport,
+      bottom: top + heightWithinViewport,
+      visible: true
+    },
+    panelMaxHeight: Math.min(RenderConfig.physicsHudPanelMaxHeight, availableHeight)
+  }
 }
 
 function createButton(text: string): HTMLButtonElement {
@@ -169,6 +243,8 @@ export class WebHudOverlay {
       row.applyButton.disabled = !parameter.isValid
       row.applyButton.style.opacity = row.applyButton.disabled ? '0.5' : '1'
     }
+
+    this.syncLayout()
   }
 
   destroy(): void {
@@ -270,5 +346,28 @@ export class WebHudOverlay {
     }
     this.parameterRows.set(key, refs)
     return refs
+  }
+
+  private syncLayout(): void {
+    const viewport = this.hooks.getViewportSize?.() ?? { width: window.innerWidth, height: window.innerHeight }
+    const rootRect = this.root.getBoundingClientRect()
+    const overlaySize: OverlayLayoutSize = {
+      width: rootRect.width || this.panel.offsetWidth || this.toggleButton.offsetWidth || RenderConfig.physicsHudPanelWidth,
+      height: rootRect.height || this.toggleButton.offsetHeight + (this.panel.style.display === 'none' ? 0 : this.panel.offsetHeight)
+    }
+    const layout = calculateHudOverlayLayout({
+      viewportWidth: viewport.width,
+      viewportHeight: viewport.height,
+      overlaySize,
+      bootStatusBoundary: this.hooks.getReservedBoundary?.() ?? null,
+      preferredOffset: RenderConfig.physicsHudOffset,
+      preferredGap: 8
+    })
+
+    this.root.style.left = `${layout.hudBoundary.left}px`
+    this.root.style.top = `${layout.hudBoundary.top}px`
+    if (layout.panelMaxHeight > 0) {
+      this.panel.style.maxHeight = `${layout.panelMaxHeight}px`
+    }
   }
 }

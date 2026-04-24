@@ -67,3 +67,16 @@
   - Rejected because persistence is explicitly out of the initial scope and adds backward-compatibility considerations.
 - 提供 JSON 导入导出  
   - Rejected because it belongs to a later workflow focused on sharing and reproducibility, not the current HUD MVP.
+
+## Decision 6: `web-hud-overlay` 与 `boot-status` 采用显式边界隔离策略
+
+**Decision**: 将 `boot-status` 视为 Web 顶部状态区的保留占位，`web-hud-overlay` 在计算自身位置时必须读取或推导该状态区边界，并保证两者最终 `element.boundary` 不相交；若默认锚点会冲突，则优先调整 HUD 位置与间距，而不是压缩或隐藏 `boot-status`。
+
+**Rationale**: 仅要求“不要遮挡关键内容”不足以防止两个顶层 DOM 元素在视觉上发生边界重叠。把 `boot-status` 作为明确的布局约束，可以把新需求 `FR-013` 转化为可测量、可回归验证的矩形分离规则。
+
+**Alternatives considered**:
+
+- 继续依赖人工目测判断是否重叠  
+  - Rejected because it is subjective and cannot prevent regressions reliably.
+- 只在某个固定窗口尺寸下微调 CSS 偏移  
+  - Rejected because the overlap rule must hold across collapsed/expanded and small-window states, not only one viewport.
